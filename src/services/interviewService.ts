@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import type { Evidence } from "@/domain";
+import type { Evidence, EvidenceGapAnalysis } from "@/domain";
 import { createOpenAIEvidenceClient, extractEvidence } from "@/ai/evidence";
+import { analyzeEvidenceGaps, createOpenAIGapAnalysisClient } from "@/ai/gaps";
 
 /**
  * Thrown by the service layer whenever the Evidence Engine can't be reached or
@@ -57,6 +58,51 @@ async function analyseResponse(input: AnalyseResponseInput): Promise<Evidence[]>
   }
 }
 
+const analyzeGapsInputSchema = z.object({
+  competencies: z.array(z.string().min(1)).min(1),
+  objectives: z.array(z.string().min(1)).min(1),
+  evidence: z.array(
+    z.object({
+      competency: z.string().min(1),
+      quote: z.string().min(1),
+      reasoning: z.string().min(1),
+      strength: z.enum(["strong", "moderate", "weak"]),
+    }),
+  ),
+});
+
+export type AnalyzeGapsInput = z.infer<typeof analyzeGapsInputSchema>;
+
+/**
+ * Runs on the server only, for the same reason analyseResponseServerFn does: the
+ * Gap Analysis Engine's OpenAI client and API key must never reach the browser.
+ */
+const analyzeGapsServerFn = createServerFn({ method: "POST" })
+  .validator(analyzeGapsInputSchema)
+  .handler(async ({ data }): Promise<EvidenceGapAnalysis> => {
+    try {
+      const client = createOpenAIGapAnalysisClient();
+      return await analyzeEvidenceGaps(data, client);
+    } catch (error) {
+      throw new InterviewServiceError("Potential couldn't analyse evidence gaps.", error);
+    }
+  });
+
+/**
+ * The only entry point React components (or the interview store) should use to
+ * reach the Gap Analysis Engine — never call analyzeEvidenceGaps() directly from
+ * UI code.
+ */
+async function analyzeGaps(input: AnalyzeGapsInput): Promise<EvidenceGapAnalysis> {
+  try {
+    return await analyzeGapsServerFn({ data: input });
+  } catch (error) {
+    if (error instanceof InterviewServiceError) throw error;
+    throw new InterviewServiceError("Potential couldn't analyse evidence gaps.", error);
+  }
+}
+
 export const interviewService = {
   analyseResponse,
+  analyzeGaps,
 };

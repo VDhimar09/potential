@@ -29,6 +29,7 @@ function LiveInterview() {
 
   const transcript = useInterviewStore((s) => s.transcript);
   const evidence = useInterviewStore((s) => s.evidence);
+  const gapAnalysis = useInterviewStore((s) => s.gapAnalysis);
   const isAnalysing = useInterviewStore((s) => s.isAnalysing);
   const error = useInterviewStore((s) => s.error);
   const submitResponse = useInterviewStore((s) => s.submitResponse);
@@ -46,9 +47,12 @@ function LiveInterview() {
     const response = draftResponse.trim();
     if (!response || isAnalysing) return;
     const question = [...transcript].reverse().find((line) => line.speaker === "You")?.text ?? "";
+    // The interview's objectives and its competencies are the same list today —
+    // there is no separate "objectives" mock source yet.
     const competencies = CANDIDATE_OBJECTIVES.map((o) => o.label);
+    const objectives = competencies;
     setDraftResponse("");
-    void submitResponse({ question, response, competencies });
+    void submitResponse({ question, response, competencies, objectives });
   }
 
   return (
@@ -269,13 +273,26 @@ function LiveInterview() {
             </ReasoningBlock>
 
             <ReasoningBlock title="Evidence still needed" tone="pending">
-              <BulletItem>How they navigate direct disagreement with a peer.</BulletItem>
-              <BulletItem>Whether their leadership scales beyond a single project.</BulletItem>
+              {!gapAnalysis ? (
+                <p className="text-[13px] leading-relaxed text-muted-foreground">
+                  Submit a response to see what evidence is still missing.
+                </p>
+              ) : gapAnalysis.missingCompetencies.length === 0 ? (
+                <p className="text-[13px] leading-relaxed text-muted-foreground">
+                  Every assessed competency has supporting evidence so far.
+                </p>
+              ) : (
+                gapAnalysis.missingCompetencies.map((gap, i) => (
+                  <BulletItem key={i}>
+                    <span className="font-medium text-foreground">{gap.competency}:</span> {gap.explanation}
+                  </BulletItem>
+                ))
+              )}
             </ReasoningBlock>
 
             <ReasoningBlock title="Current understanding" tone="neutral">
               <p className="text-[13px] leading-relaxed text-muted-foreground">
-                Alex leads through evidence, not authority. Their behaviour under conflict is not yet observed.
+                {gapAnalysis?.summary ?? "Submit a response to see Potential's understanding so far."}
               </p>
             </ReasoningBlock>
 

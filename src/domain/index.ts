@@ -1,6 +1,7 @@
 export * from "./candidate";
 export * from "./interview";
 export * from "./evidence";
+export * from "./gaps";
 export * from "./report";
 export * from "./journey";
 export * from "./role";
