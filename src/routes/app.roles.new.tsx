@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { ArrowLeft, Sparkles, Upload, Check, Plus, X, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import type { InterviewBlueprint } from "@/domain";
+import { roleService } from "@/services/roleService";
 import {
-  SUGGESTED_OBJECTIVES,
   SUGGESTED_COMPETENCIES,
   DEFAULT_COMPETENCIES,
   DEFAULT_INTERVIEW_PLAN,
@@ -25,7 +27,39 @@ function CreateRole() {
   const [jd, setJd] = useState("");
   const [comps, setComps] = useState<string[]>(DEFAULT_COMPETENCIES);
   const [objectives, setObjectives] = useState<string[]>([]);
-  const [analyzed, setAnalyzed] = useState(false);
+  const [blueprint, setBlueprint] = useState<InterviewBlueprint | null>(null);
+  const [roleSummary, setRoleSummary] = useState("");
+  const [responsibilitiesText, setResponsibilitiesText] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!analyzeError) return;
+    toast.error(analyzeError);
+    setAnalyzeError(null);
+  }, [analyzeError]);
+
+  async function handleAnalyzeRole() {
+    const jobDescription = jd.trim();
+    if (jobDescription.length <= 40 || isAnalyzing) return;
+
+    setIsAnalyzing(true);
+    try {
+      const result = await roleService.analyzeRole({ jobDescription });
+      setBlueprint(result);
+      setTitle(result.roleTitle);
+      setRoleSummary(result.roleSummary);
+      setResponsibilitiesText(result.keyResponsibilities.join("\n"));
+      setComps(result.competencies);
+      setObjectives([]);
+    } catch (error) {
+      setAnalyzeError(
+        error instanceof Error ? error.message : "Potential couldn't analyse that job description.",
+      );
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }
 
   return (
     <div className="relative">
@@ -75,22 +109,23 @@ function CreateRole() {
                   <Upload className="h-3.5 w-3.5" /> Upload PDF
                 </button>
                 <button
-                  onClick={() => setAnalyzed(true)}
+                  onClick={handleAnalyzeRole}
+                  disabled={isAnalyzing || jd.trim().length <= 40}
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-medium transition-all",
-                    jd.length > 40
+                    !isAnalyzing && jd.trim().length > 40
                       ? "bg-foreground text-background hover:opacity-90"
                       : "cursor-not-allowed bg-muted text-muted-foreground",
                   )}
                 >
-                  <Sparkles className="h-3.5 w-3.5" /> Suggest objectives
+                  <Sparkles className="h-3.5 w-3.5" /> {isAnalyzing ? "Analysing…" : "Suggest objectives"}
                 </button>
               </div>
             </div>
           </Field>
 
           {/* AI suggestions */}
-          {analyzed && (
+          {blueprint && (
             <div className="rise-in">
               <div className="mb-4 flex items-center gap-2">
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary/15 text-secondary">
@@ -100,14 +135,14 @@ function CreateRole() {
                 <div className="text-[11px] text-muted-foreground">Accept, edit, or ignore</div>
               </div>
               <div className="space-y-2">
-                {SUGGESTED_OBJECTIVES.map((o) => {
-                  const active = objectives.includes(o.title);
+                {blueprint.interviewObjectives.map((objective) => {
+                  const active = objectives.includes(objective);
                   return (
                     <button
-                      key={o.title}
+                      key={objective}
                       onClick={() =>
                         setObjectives((prev) =>
-                          prev.includes(o.title) ? prev.filter((x) => x !== o.title) : [...prev, o.title],
+                          prev.includes(objective) ? prev.filter((x) => x !== objective) : [...prev, objective],
                         )
                       }
                       className={cn(
@@ -124,14 +159,36 @@ function CreateRole() {
                         {active && <Check className="h-3 w-3" />}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-[14px] font-medium text-foreground">{o.title}</div>
-                        <div className="mt-1 text-[12px] text-muted-foreground">{o.why}</div>
+                        <div className="text-[14px] font-medium text-foreground">{objective}</div>
                       </div>
                     </button>
                   );
                 })}
               </div>
             </div>
+          )}
+
+          {/* Role summary + key responsibilities — Potential's draft, edited by the interviewer */}
+          {blueprint && (
+            <Field label="Role summary" help="Potential's read of the role, grounded in the job description — edit until it matches your intent.">
+              <textarea
+                value={roleSummary}
+                onChange={(e) => setRoleSummary(e.target.value)}
+                rows={3}
+                className="w-full resize-none rounded-xl border border-hairline/70 bg-background/60 p-4 text-[14px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/60 focus:shadow-soft"
+              />
+            </Field>
+          )}
+
+          {blueprint && (
+            <Field label="Key responsibilities" help="One per line, drawn from the job description — add, remove, or reword freely.">
+              <textarea
+                value={responsibilitiesText}
+                onChange={(e) => setResponsibilitiesText(e.target.value)}
+                rows={4}
+                className="w-full resize-none rounded-xl border border-hairline/70 bg-background/60 p-4 text-[14px] leading-relaxed text-foreground outline-none placeholder:text-muted-foreground/60 focus:shadow-soft"
+              />
+            </Field>
           )}
 
           {/* Competencies */}
@@ -159,6 +216,20 @@ function CreateRole() {
               ))}
             </div>
           </Field>
+
+          {/* Evidence plan — what to listen for, never what to ask */}
+          {blueprint && (
+            <Field label="Evidence plan" help="What to listen for during the interview. Potential never suggests what to ask.">
+              <ul className="space-y-2">
+                {blueprint.evidencePlan.map((item, i) => (
+                  <li key={i} className="rounded-xl border border-hairline/70 bg-background/60 p-4">
+                    <div className="text-[13px] font-medium text-foreground">{item.competency}</div>
+                    <div className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{item.guidance}</div>
+                  </li>
+                ))}
+              </ul>
+            </Field>
+          )}
 
           {/* Interview plan */}
           <Field label="Interview plan" help="Potential drafts a natural flow. You can rearrange freely.">

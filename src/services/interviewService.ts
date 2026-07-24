@@ -1,8 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import type { Evidence, EvidenceGapAnalysis } from "@/domain";
+import type { Evidence, EvidenceGapAnalysis, FollowUpSuggestion } from "@/domain";
 import { createOpenAIEvidenceClient, extractEvidence } from "@/ai/evidence";
 import { analyzeEvidenceGaps, createOpenAIGapAnalysisClient } from "@/ai/gaps";
+import { analyzeFollowUp, createOpenAIFollowUpClient } from "@/ai/followups";
 
 /**
  * Thrown by the service layer whenever the Evidence Engine can't be reached or
@@ -102,7 +103,62 @@ async function analyzeGaps(input: AnalyzeGapsInput): Promise<EvidenceGapAnalysis
   }
 }
 
+const generateFollowUpInputSchema = z.object({
+  latestResponse: z.string().min(1),
+  evidence: z.array(
+    z.object({
+      competency: z.string().min(1),
+      quote: z.string().min(1),
+      reasoning: z.string().min(1),
+      strength: z.enum(["strong", "moderate", "weak"]),
+    }),
+  ),
+  gapAnalysis: z.object({
+    summary: z.string().min(1),
+    coveredCompetencies: z.array(z.string().min(1)),
+    missingCompetencies: z.array(
+      z.object({ competency: z.string().min(1), explanation: z.string().min(1) }),
+    ),
+    completedObjectives: z.array(z.string().min(1)),
+    incompleteObjectives: z.array(
+      z.object({ objective: z.string().min(1), explanation: z.string().min(1) }),
+    ),
+  }),
+});
+
+export type GenerateFollowUpInput = z.infer<typeof generateFollowUpInputSchema>;
+
+/**
+ * Runs on the server only, for the same reason the other server functions in this
+ * file do: the Follow-up Engine's OpenAI client and API key must never reach the
+ * browser.
+ */
+const generateFollowUpServerFn = createServerFn({ method: "POST" })
+  .validator(generateFollowUpInputSchema)
+  .handler(async ({ data }): Promise<FollowUpSuggestion> => {
+    try {
+      const client = createOpenAIFollowUpClient();
+      return await analyzeFollowUp(data, client);
+    } catch (error) {
+      throw new InterviewServiceError("Potential couldn't suggest a follow-up question.", error);
+    }
+  });
+
+/**
+ * The only entry point React components (or the interview store) should use to
+ * reach the Follow-up Engine — never call analyzeFollowUp() directly from UI code.
+ */
+async function generateFollowUp(input: GenerateFollowUpInput): Promise<FollowUpSuggestion> {
+  try {
+    return await generateFollowUpServerFn({ data: input });
+  } catch (error) {
+    if (error instanceof InterviewServiceError) throw error;
+    throw new InterviewServiceError("Potential couldn't suggest a follow-up question.", error);
+  }
+}
+
 export const interviewService = {
   analyseResponse,
   analyzeGaps,
+  generateFollowUp,
 };

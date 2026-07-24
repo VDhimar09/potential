@@ -7,6 +7,16 @@ import { ALEX_MORGAN } from "@/lib/mock/candidates";
 import { INTERVIEW_TIMELINE, CANDIDATE_OBJECTIVES } from "@/lib/mock/interviews";
 import { EVIDENCE_NODES, EVIDENCE_EDGES } from "@/lib/mock/evidence";
 import { useInterviewStore } from "@/stores/interviewStore";
+import type { InterviewReflection } from "@/domain";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/app/interviews/console")({
   component: LiveInterview,
@@ -30,9 +40,13 @@ function LiveInterview() {
   const transcript = useInterviewStore((s) => s.transcript);
   const evidence = useInterviewStore((s) => s.evidence);
   const gapAnalysis = useInterviewStore((s) => s.gapAnalysis);
+  const followUpSuggestion = useInterviewStore((s) => s.followUpSuggestion);
+  const reflection = useInterviewStore((s) => s.reflection);
   const isAnalysing = useInterviewStore((s) => s.isAnalysing);
   const error = useInterviewStore((s) => s.error);
   const submitResponse = useInterviewStore((s) => s.submitResponse);
+  const finishInterview = useInterviewStore((s) => s.finishInterview);
+  const dismissReflection = useInterviewStore((s) => s.dismissReflection);
   const clearError = useInterviewStore((s) => s.clearError);
 
   useEffect(() => {
@@ -40,6 +54,14 @@ function LiveInterview() {
     toast.error(error);
     clearError();
   }, [error, clearError]);
+
+  // Reflection Check decided the interview already looks complete — a calm
+  // confirmation, not a modal requiring a decision.
+  useEffect(() => {
+    if (!reflection || !reflection.isComplete) return;
+    toast.success("This interview appears complete — every competency and objective has supporting evidence so far.");
+    dismissReflection();
+  }, [reflection, dismissReflection]);
 
   const [draftResponse, setDraftResponse] = useState("");
 
@@ -78,7 +100,10 @@ function LiveInterview() {
           <button className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground">
             <Pause className="h-3.5 w-3.5" /> Pause
           </button>
-          <button className="inline-flex items-center gap-1.5 rounded-md bg-foreground/[0.06] px-3 py-1.5 text-[12px] font-medium text-foreground transition-colors hover:bg-foreground/[0.09]">
+          <button
+            onClick={finishInterview}
+            className="inline-flex items-center gap-1.5 rounded-md bg-foreground/[0.06] px-3 py-1.5 text-[12px] font-medium text-foreground transition-colors hover:bg-foreground/[0.09]"
+          >
             <Circle className="h-2.5 w-2.5 fill-current" /> End interview
           </button>
         </div>
@@ -303,12 +328,17 @@ function LiveInterview() {
                   <ChevronRight className="h-3 w-3" /> Suggested follow-up
                 </div>
                 <p className="mt-3 text-[15px] leading-snug text-foreground">
-                  Explore the disagreement Alex just referenced. Ask how they responded to the senior engineer's pushback.
+                  {followUpSuggestion?.question ?? "Submit a response to see Potential's suggested follow-up."}
                 </p>
-                <div className="mt-4 flex items-start gap-2 text-[11px] leading-relaxed text-muted-foreground">
-                  <Info className="mt-0.5 h-3 w-3 shrink-0" />
-                  <span>Why · the objective needs conflict evidence, and Alex has just opened that door naturally.</span>
-                </div>
+                {followUpSuggestion && (
+                  <div className="mt-4 flex items-start gap-2 text-[11px] leading-relaxed text-muted-foreground">
+                    <Info className="mt-0.5 h-3 w-3 shrink-0" />
+                    <span>
+                      <span className="font-medium text-foreground/80">{followUpSuggestion.addressesCompetency}</span> ·{" "}
+                      {followUpSuggestion.reason}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -332,6 +362,13 @@ function LiveInterview() {
           </div>
         </aside>
       </div>
+
+      <InterviewReflectionModal
+        reflection={reflection && !reflection.isComplete ? reflection : null}
+        onAskOneMore={dismissReflection}
+        onDismiss={dismissReflection}
+        candidateId={ALEX_MORGAN.id}
+      />
     </div>
   );
 }
@@ -473,6 +510,103 @@ function BulletItem({ children }: { children: React.ReactNode }) {
     <div className="flex items-start gap-2 text-[13px] leading-snug text-foreground">
       <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-muted-foreground/50" />
       <span>{children}</span>
+    </div>
+  );
+}
+
+/**
+ * Reflection Check's result, surfaced only when gaps remain. It shows exactly
+ * what's already been collected and the follow-up already suggested — it never
+ * generates a new one, and nothing here scores or judges the candidate.
+ */
+function InterviewReflectionModal({
+  reflection,
+  onAskOneMore,
+  onDismiss,
+  candidateId,
+}: {
+  reflection: InterviewReflection | null;
+  onAskOneMore: () => void;
+  onDismiss: () => void;
+  candidateId: string;
+}) {
+  return (
+    <Dialog open={reflection !== null} onOpenChange={(open) => !open && onDismiss()}>
+      <DialogContent className="max-w-xl rounded-2xl border border-hairline/70 bg-background/95 p-7 shadow-elegant backdrop-blur-2xl">
+        <DialogHeader>
+          <DialogTitle className="font-display text-2xl font-normal text-foreground">Interview reflection</DialogTitle>
+          <DialogDescription className="text-[13px] leading-relaxed text-muted-foreground">
+            Potential checked whether the evidence collected so far fairly covers this interview — never how the candidate performed.
+          </DialogDescription>
+        </DialogHeader>
+
+        {reflection && (
+          <div className="max-h-[55vh] space-y-6 overflow-y-auto pr-1">
+            <ReflectionSection title="Evidence collected">
+              {reflection.evidence.length === 0 ? (
+                <p className="text-[13px] leading-relaxed text-muted-foreground">No evidence captured yet.</p>
+              ) : (
+                reflection.evidence.map((e, i) => (
+                  <BulletItem key={i}>
+                    <span className="font-medium text-foreground">{e.competency}:</span> {e.reasoning}
+                  </BulletItem>
+                ))
+              )}
+            </ReflectionSection>
+
+            <ReflectionSection title="Competencies still to explore">
+              {reflection.remainingCompetencyGaps.length === 0 && reflection.remainingObjectiveGaps.length === 0 ? (
+                <p className="text-[13px] leading-relaxed text-muted-foreground">
+                  Nothing has been analysed yet — submit at least one response before finishing.
+                </p>
+              ) : (
+                <>
+                  {reflection.remainingCompetencyGaps.map((gap, i) => (
+                    <BulletItem key={`competency-${i}`}>
+                      <span className="font-medium text-foreground">{gap.competency}:</span> {gap.explanation}
+                    </BulletItem>
+                  ))}
+                  {reflection.remainingObjectiveGaps.map((gap, i) => (
+                    <BulletItem key={`objective-${i}`}>
+                      <span className="font-medium text-foreground">{gap.objective}:</span> {gap.explanation}
+                    </BulletItem>
+                  ))}
+                </>
+              )}
+            </ReflectionSection>
+
+            {reflection.followUpSuggestion && (
+              <ReflectionSection title="Suggested follow-up">
+                <p className="text-[13px] leading-relaxed text-foreground">{reflection.followUpSuggestion.question}</p>
+                <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">
+                  <span className="font-medium text-foreground/80">{reflection.followUpSuggestion.addressesCompetency}</span>{" "}
+                  · {reflection.followUpSuggestion.reason}
+                </p>
+              </ReflectionSection>
+            )}
+          </div>
+        )}
+
+        <DialogFooter className="mt-2 gap-2 sm:justify-between">
+          <Button variant="outline" onClick={onAskOneMore} className="rounded-full">
+            Ask one more question
+          </Button>
+          <Button asChild className="rounded-full bg-foreground text-background hover:opacity-90">
+            <Link to="/app/reports/$id" params={{ id: candidateId }} onClick={onDismiss}>
+              Finish interview
+            </Link>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ReflectionSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <Label>{title}</Label>
+      <div className="mt-2 space-y-1.5">{children}</div>
     </div>
   );
 }
