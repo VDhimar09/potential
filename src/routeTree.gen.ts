@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as DiscoveryRouteImport } from './routes/discovery'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as PlaygroundEvidenceRouteImport } from './routes/playground.evidence'
 import { Route as AppInterviewsConsoleRouteImport } from './routes/app.interviews.console'
 import { Route as AppJourneyIdRouteImport } from './routes/app.journey.$id'
 import { Route as AppReportsIdRouteImport } from './routes/app.reports.$id'
@@ -37,6 +38,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
+} as any)
+const PlaygroundEvidenceRoute = PlaygroundEvidenceRouteImport.update({
+  id: '/playground/evidence',
+  path: '/playground/evidence',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppInterviewsConsoleRoute = AppInterviewsConsoleRouteImport.update({
   id: '/interviews/console',
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/discovery': typeof DiscoveryRoute
+  '/playground/evidence': typeof PlaygroundEvidenceRoute
   '/app/': typeof AppIndexRoute
   '/app/interviews/console': typeof AppInterviewsConsoleRoute
   '/app/journey/$id': typeof AppJourneyIdRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/discovery': typeof DiscoveryRoute
+  '/playground/evidence': typeof PlaygroundEvidenceRoute
   '/app': typeof AppIndexRoute
   '/app/interviews/console': typeof AppInterviewsConsoleRoute
   '/app/journey/$id': typeof AppJourneyIdRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/discovery': typeof DiscoveryRoute
+  '/playground/evidence': typeof PlaygroundEvidenceRoute
   '/app/': typeof AppIndexRoute
   '/app/interviews/console': typeof AppInterviewsConsoleRoute
   '/app/journey/$id': typeof AppJourneyIdRoute
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/discovery'
+    | '/playground/evidence'
     | '/app/'
     | '/app/interviews/console'
     | '/app/journey/$id'
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/discovery'
+    | '/playground/evidence'
     | '/app'
     | '/app/interviews/console'
     | '/app/journey/$id'
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/discovery'
+    | '/playground/evidence'
     | '/app/'
     | '/app/interviews/console'
     | '/app/journey/$id'
@@ -125,6 +137,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   DiscoveryRoute: typeof DiscoveryRoute
+  PlaygroundEvidenceRoute: typeof PlaygroundEvidenceRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -156,6 +169,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/playground/evidence': {
+      id: '/playground/evidence'
+      path: '/playground/evidence'
+      fullPath: '/playground/evidence'
+      preLoaderRoute: typeof PlaygroundEvidenceRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/app/interviews/console': {
       id: '/app/interviews/console'
@@ -210,6 +230,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   DiscoveryRoute: DiscoveryRoute,
+  PlaygroundEvidenceRoute: PlaygroundEvidenceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

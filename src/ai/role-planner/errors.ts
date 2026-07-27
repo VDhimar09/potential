@@ -1,6 +1,8 @@
-export class RolePlannerError extends Error {
+import { AiModuleError } from "../shared/AiModuleError";
+
+export class RolePlannerError extends AiModuleError {
   constructor(message: string, cause?: unknown) {
-    super(message, cause !== undefined ? { cause } : undefined);
+    super(message, cause);
     this.name = "RolePlannerError";
   }
 }

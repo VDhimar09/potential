@@ -5,6 +5,7 @@ import { buildAnalyzeRoleUserPrompt, ROLE_PLANNER_SYSTEM_PROMPT } from "./prompt
 import type { AnalyzeRoleInput } from "./prompt";
 import type { RolePlannerClient } from "./client";
 import { RolePlannerError } from "./errors";
+import { parseStructuredCompletion } from "../shared/parseStructuredCompletion";
 
 // Structured Outputs works with any model in the gpt-4o line or newer; override via
 // options.model (or this env var) as the model lineup evolves.
@@ -39,27 +40,17 @@ export async function analyzeRole(
   const schema = buildInterviewBlueprintSchema();
   const userPrompt = buildAnalyzeRoleUserPrompt(validatedInput);
 
-  const rawOutput = await client.parse({
-    model: options.model ?? DEFAULT_MODEL,
-    systemPrompt: ROLE_PLANNER_SYSTEM_PROMPT,
-    userPrompt,
+  return parseStructuredCompletion({
+    client,
+    request: {
+      model: options.model ?? DEFAULT_MODEL,
+      systemPrompt: ROLE_PLANNER_SYSTEM_PROMPT,
+      userPrompt,
+      schema,
+      schemaName: "interview_blueprint",
+    },
     schema,
-    schemaName: "interview_blueprint",
+    schemaLabel: "interview blueprint schema",
+    ErrorClass: RolePlannerError,
   });
-
-  if (rawOutput == null) {
-    throw new RolePlannerError(
-      "The model returned no parsable output (it may have refused the request).",
-    );
-  }
-
-  const result = schema.safeParse(rawOutput);
-  if (!result.success) {
-    throw new RolePlannerError(
-      `Model output did not match the expected interview blueprint schema: ${result.error.message}`,
-      result.error,
-    );
-  }
-
-  return result.data;
 }

@@ -1,4 +1,5 @@
 import type { Evidence } from "@/domain";
+import { formatEvidenceForPrompt } from "../shared/formatEvidenceForPrompt";
 
 export interface AnalyzeEvidenceGapsInput {
   /** The competencies currently being assessed in this interview. */
@@ -28,15 +29,7 @@ Rules:
 - If no evidence has been collected at all, every competency and objective is missing or incomplete, and the summary should say so plainly.`;
 
 export function buildEvidenceGapAnalysisUserPrompt(input: AnalyzeEvidenceGapsInput): string {
-  const evidenceDescription =
-    input.evidence.length === 0
-      ? "No evidence has been collected yet."
-      : input.evidence
-          .map(
-            (e, i) =>
-              `${i + 1}. [${e.competency}] "${e.quote}" — ${e.reasoning} (strength: ${e.strength})`,
-          )
-          .join("\n");
+  const evidenceDescription = formatEvidenceForPrompt(input.evidence);
 
   return [
     `Competencies being assessed: ${input.competencies.join(", ")}`,

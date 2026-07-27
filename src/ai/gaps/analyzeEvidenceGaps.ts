@@ -5,17 +5,12 @@ import { buildEvidenceGapAnalysisUserPrompt, EVIDENCE_GAP_ANALYSIS_SYSTEM_PROMPT
 import type { AnalyzeEvidenceGapsInput } from "./prompt";
 import type { GapAnalysisClient } from "./client";
 import { EvidenceGapAnalysisError } from "./errors";
+import { parseStructuredCompletion } from "../shared/parseStructuredCompletion";
+import { evidenceInputSchema } from "../shared/evidenceSchema";
 
 // Structured Outputs works with any model in the gpt-4o line or newer; override via
 // options.model (or this env var) as the model lineup evolves.
 const DEFAULT_MODEL = process.env.OPENAI_GAP_ANALYSIS_MODEL ?? "gpt-4o-mini";
-
-const evidenceInputSchema = z.object({
-  competency: z.string().min(1),
-  quote: z.string().min(1),
-  reasoning: z.string().min(1),
-  strength: z.enum(["strong", "moderate", "weak"]),
-});
 
 const analyzeEvidenceGapsInputSchema = z.object({
   competencies: z.array(z.string().min(1)).min(1, "at least one competency is required"),
@@ -53,27 +48,17 @@ export async function analyzeEvidenceGaps(
   );
   const userPrompt = buildEvidenceGapAnalysisUserPrompt(validatedInput);
 
-  const rawOutput = await client.parse({
-    model: options.model ?? DEFAULT_MODEL,
-    systemPrompt: EVIDENCE_GAP_ANALYSIS_SYSTEM_PROMPT,
-    userPrompt,
+  return parseStructuredCompletion({
+    client,
+    request: {
+      model: options.model ?? DEFAULT_MODEL,
+      systemPrompt: EVIDENCE_GAP_ANALYSIS_SYSTEM_PROMPT,
+      userPrompt,
+      schema,
+      schemaName: "evidence_gap_analysis",
+    },
     schema,
-    schemaName: "evidence_gap_analysis",
+    schemaLabel: "gap analysis schema",
+    ErrorClass: EvidenceGapAnalysisError,
   });
-
-  if (rawOutput == null) {
-    throw new EvidenceGapAnalysisError(
-      "The model returned no parsable output (it may have refused the request).",
-    );
-  }
-
-  const result = schema.safeParse(rawOutput);
-  if (!result.success) {
-    throw new EvidenceGapAnalysisError(
-      `Model output did not match the expected gap analysis schema: ${result.error.message}`,
-      result.error,
-    );
-  }
-
-  return result.data;
 }

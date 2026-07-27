@@ -5,17 +5,12 @@ import { buildFollowUpUserPrompt, FOLLOW_UP_SYSTEM_PROMPT } from "./prompt";
 import type { AnalyzeFollowUpInput } from "./prompt";
 import type { FollowUpGenerationClient } from "./client";
 import { FollowUpGenerationError } from "./errors";
+import { parseStructuredCompletion } from "../shared/parseStructuredCompletion";
+import { evidenceInputSchema } from "../shared/evidenceSchema";
 
 // Structured Outputs works with any model in the gpt-4o line or newer; override via
 // options.model (or this env var) as the model lineup evolves.
 const DEFAULT_MODEL = process.env.OPENAI_FOLLOWUP_MODEL ?? "gpt-4o-mini";
-
-const evidenceInputSchema = z.object({
-  competency: z.string().min(1),
-  quote: z.string().min(1),
-  reasoning: z.string().min(1),
-  strength: z.enum(["strong", "moderate", "weak"]),
-});
 
 const competencyGapInputSchema = z.object({
   competency: z.string().min(1),
@@ -86,27 +81,17 @@ export async function analyzeFollowUp(
   const schema = buildFollowUpSuggestionSchema(competencies);
   const userPrompt = buildFollowUpUserPrompt(validatedInput);
 
-  const rawOutput = await client.parse({
-    model: options.model ?? DEFAULT_MODEL,
-    systemPrompt: FOLLOW_UP_SYSTEM_PROMPT,
-    userPrompt,
+  return parseStructuredCompletion({
+    client,
+    request: {
+      model: options.model ?? DEFAULT_MODEL,
+      systemPrompt: FOLLOW_UP_SYSTEM_PROMPT,
+      userPrompt,
+      schema,
+      schemaName: "follow_up_suggestion",
+    },
     schema,
-    schemaName: "follow_up_suggestion",
+    schemaLabel: "follow-up schema",
+    ErrorClass: FollowUpGenerationError,
   });
-
-  if (rawOutput == null) {
-    throw new FollowUpGenerationError(
-      "The model returned no parsable output (it may have refused the request).",
-    );
-  }
-
-  const result = schema.safeParse(rawOutput);
-  if (!result.success) {
-    throw new FollowUpGenerationError(
-      `Model output did not match the expected follow-up schema: ${result.error.message}`,
-      result.error,
-    );
-  }
-
-  return result.data;
 }

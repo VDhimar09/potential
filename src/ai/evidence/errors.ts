@@ -1,6 +1,8 @@
-export class EvidenceExtractionError extends Error {
+import { AiModuleError } from "../shared/AiModuleError";
+
+export class EvidenceExtractionError extends AiModuleError {
   constructor(message: string, cause?: unknown) {
-    super(message, cause !== undefined ? { cause } : undefined);
+    super(message, cause);
     this.name = "EvidenceExtractionError";
   }
 }

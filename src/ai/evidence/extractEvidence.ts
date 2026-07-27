@@ -5,6 +5,7 @@ import { buildEvidenceExtractionUserPrompt, EVIDENCE_EXTRACTION_SYSTEM_PROMPT } 
 import type { ExtractEvidenceInput } from "./prompt";
 import type { EvidenceExtractionClient } from "./client";
 import { EvidenceExtractionError } from "./errors";
+import { parseStructuredCompletion } from "../shared/parseStructuredCompletion";
 
 // Structured Outputs works with any model in the gpt-4o line or newer; override via
 // options.model (or this env var) as the model lineup evolves.
@@ -37,27 +38,17 @@ export async function extractEvidence(
   const schema = buildEvidenceExtractionSchema(validatedInput.competencies);
   const userPrompt = buildEvidenceExtractionUserPrompt(validatedInput);
 
-  const rawOutput = await client.parse({
-    model: options.model ?? DEFAULT_MODEL,
-    systemPrompt: EVIDENCE_EXTRACTION_SYSTEM_PROMPT,
-    userPrompt,
+  return parseStructuredCompletion({
+    client,
+    request: {
+      model: options.model ?? DEFAULT_MODEL,
+      systemPrompt: EVIDENCE_EXTRACTION_SYSTEM_PROMPT,
+      userPrompt,
+      schema,
+      schemaName: "evidence_extraction",
+    },
     schema,
-    schemaName: "evidence_extraction",
+    schemaLabel: "evidence schema",
+    ErrorClass: EvidenceExtractionError,
   });
-
-  if (rawOutput == null) {
-    throw new EvidenceExtractionError(
-      "The model returned no parsable output (it may have refused the request).",
-    );
-  }
-
-  const result = schema.safeParse(rawOutput);
-  if (!result.success) {
-    throw new EvidenceExtractionError(
-      `Model output did not match the expected evidence schema: ${result.error.message}`,
-      result.error,
-    );
-  }
-
-  return result.data;
 }

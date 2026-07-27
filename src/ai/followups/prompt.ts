@@ -1,4 +1,5 @@
 import type { Evidence, EvidenceGapAnalysis } from "@/domain";
+import { formatEvidenceForPrompt } from "../shared/formatEvidenceForPrompt";
 
 export interface AnalyzeFollowUpInput {
   /** What the candidate just said, most recently. */
@@ -30,15 +31,7 @@ Rules:
 - The goal is to collect missing evidence — nothing else. You do not decide whether the candidate is a good fit.`;
 
 export function buildFollowUpUserPrompt(input: AnalyzeFollowUpInput): string {
-  const evidenceDescription =
-    input.evidence.length === 0
-      ? "No evidence has been collected yet."
-      : input.evidence
-          .map(
-            (e, i) =>
-              `${i + 1}. [${e.competency}] "${e.quote}" — ${e.reasoning} (strength: ${e.strength})`,
-          )
-          .join("\n");
+  const evidenceDescription = formatEvidenceForPrompt(input.evidence);
 
   const missingDescription =
     input.gapAnalysis.missingCompetencies.length === 0

@@ -1,14 +1,10 @@
-import OpenAI from "openai";
-import { zodTextFormat } from "openai/helpers/zod";
-import type { z } from "zod";
+import {
+  createOpenAIStructuredOutputClient,
+  type StructuredOutputClient,
+  type StructuredOutputRequest,
+} from "../shared/structuredOutputClient";
 
-export interface GapAnalysisModelRequest {
-  model: string;
-  systemPrompt: string;
-  userPrompt: string;
-  schema: z.ZodTypeAny;
-  schemaName: string;
-}
+export type GapAnalysisModelRequest = StructuredOutputRequest;
 
 /**
  * The port `analyzeEvidenceGaps` depends on. Expressed in our own terms (prompts,
@@ -16,28 +12,15 @@ export interface GapAnalysisModelRequest {
  * implement it with a plain object and never need a real API key or network
  * access — only `createOpenAIGapAnalysisClient` below knows the OpenAI SDK exists.
  */
-export interface GapAnalysisClient {
-  parse(request: GapAnalysisModelRequest): Promise<unknown>;
-}
+export type GapAnalysisClient = StructuredOutputClient;
 
 /**
  * Adapts the real OpenAI Responses API (Structured Outputs) to the
  * GapAnalysisClient port. Pass an existing `OpenAI` instance to reuse shared
  * configuration (API key, org, base URL); otherwise one is constructed from the
  * standard `OPENAI_API_KEY` environment variable.
+ *
+ * Every AI module makes this exact same kind of call, so the implementation
+ * lives once in shared/structuredOutputClient.ts.
  */
-export function createOpenAIGapAnalysisClient(client: OpenAI = new OpenAI()): GapAnalysisClient {
-  return {
-    async parse({ model, systemPrompt, userPrompt, schema, schemaName }) {
-      const response = await client.responses.parse({
-        model,
-        input: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        text: { format: zodTextFormat(schema, schemaName) },
-      });
-      return response.output_parsed;
-    },
-  };
-}
+export const createOpenAIGapAnalysisClient = createOpenAIStructuredOutputClient;

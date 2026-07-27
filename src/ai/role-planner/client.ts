@@ -1,14 +1,10 @@
-import OpenAI from "openai";
-import { zodTextFormat } from "openai/helpers/zod";
-import type { z } from "zod";
+import {
+  createOpenAIStructuredOutputClient,
+  type StructuredOutputClient,
+  type StructuredOutputRequest,
+} from "../shared/structuredOutputClient";
 
-export interface RolePlannerModelRequest {
-  model: string;
-  systemPrompt: string;
-  userPrompt: string;
-  schema: z.ZodTypeAny;
-  schemaName: string;
-}
+export type RolePlannerModelRequest = StructuredOutputRequest;
 
 /**
  * The port `analyzeRole` depends on. Expressed in our own terms (prompts, a zod
@@ -16,28 +12,15 @@ export interface RolePlannerModelRequest {
  * it with a plain object and never need a real API key or network access — only
  * `createOpenAIRolePlannerClient` below knows the OpenAI SDK exists.
  */
-export interface RolePlannerClient {
-  parse(request: RolePlannerModelRequest): Promise<unknown>;
-}
+export type RolePlannerClient = StructuredOutputClient;
 
 /**
  * Adapts the real OpenAI Responses API (Structured Outputs) to the
  * RolePlannerClient port. Pass an existing `OpenAI` instance to reuse shared
  * configuration (API key, org, base URL); otherwise one is constructed from the
  * standard `OPENAI_API_KEY` environment variable.
+ *
+ * Every AI module makes this exact same kind of call, so the implementation
+ * lives once in shared/structuredOutputClient.ts.
  */
-export function createOpenAIRolePlannerClient(client: OpenAI = new OpenAI()): RolePlannerClient {
-  return {
-    async parse({ model, systemPrompt, userPrompt, schema, schemaName }) {
-      const response = await client.responses.parse({
-        model,
-        input: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        text: { format: zodTextFormat(schema, schemaName) },
-      });
-      return response.output_parsed;
-    },
-  };
-}
+export const createOpenAIRolePlannerClient = createOpenAIStructuredOutputClient;
