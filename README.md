@@ -8,15 +8,23 @@
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Status](https://img.shields.io/badge/Status-Discovery-blueviolet)
 
-Potential does not score candidates, rank them, or recommend who to hire. It helps interviewers collect trustworthy, explainable evidence about what a candidate actually demonstrated — so the humans in the room can make a fair decision with better material, not a shortcut around making one.
+**Potential helps interviewers and hiring teams collect trustworthy, explainable evidence about candidate capability — instead of a score, a rank, or an AI-generated recommendation.**
+
+Humans still make every hiring decision. Potential's only job is to make sure they're deciding from real evidence, not an impression.
 
 > **Have we collected enough trustworthy evidence to fairly understand this candidate?**
 
-That question is the only thing the product optimizes for. Everything below explains how.
+That's the only question the product optimizes for.
+
+> 🚧 **Current status**
+>
+> Potential is transitioning from a working AI prototype into a production-ready platform. The core AI workflow — evidence extraction, gap analysis, and adaptive follow-ups — is complete and running against a live interview. Current work is focused on persistence, real interview data, and production architecture. See [Current Status](#current-status) for the detailed breakdown.
 
 ---
 
 ![Potential — home dashboard](assets/screenshots/home.jpg)
+
+*The home workspace — where an interviewer's roles, interviews, and evidence reports come together.*
 
 ---
 
@@ -131,8 +139,10 @@ The engines from **Evidence Extraction** through **Reflection Check** are wired 
 The AI layer is isolated by design: it's the only part of the codebase that knows OpenAI exists, it never runs in the browser, and no UI component talks to it directly.
 
 ```
-Component → Zustand store → Service layer (server-only) → AI engine → OpenAI Responses API
+UI (component or route) → Service layer (server-only) → AI engine → OpenAI Responses API
 ```
+
+Live Interview additionally holds its session state — transcript, evidence, in-progress analysis — in a Zustand store between calls. Role Planner has no session to track, so its route calls the service layer directly.
 
 ### Organized by capability, not by layer
 
@@ -218,6 +228,8 @@ There's also an internal-only route, `/playground/evidence`, for exercising an e
 | Multi-interview rollup | Aggregating evidence from several interviewers into one candidate record |
 | Collaboration & enterprise readiness | Auth, workspaces, sharing, and the access model a team actually needs |
 
+For how these planned items are sequenced, see [Roadmap](#roadmap) below.
+
 ---
 
 ## Roadmap
@@ -263,6 +275,22 @@ Potential's AI has exactly three jobs — extract evidence, analyze gaps, sugges
 - Gap analysis and follow-up generation never see a raw transcript — only structured, already-validated evidence from the stage before, so tone or phrasing can't sway a later judgment.
 
 The full commitments — and where Potential's responsibility deliberately stops — are written out in [`docs/responsible-ai.md`](docs/responsible-ai.md). The short version: Potential doesn't claim to remove bias from hiring. It claims something narrower and more honest — that the evidence behind a hiring conversation is visible and checkable, instead of collapsed into an impression or a number.
+
+---
+
+## Learn more
+
+Every principle above is a decision this repository has made deliberately, and each one is written down in full — not just asserted here:
+
+| Document | What it covers |
+|---|---|
+| [`docs/north-star.md`](docs/north-star.md) | Why Potential exists, and what it will never become |
+| [`docs/manifesto.md`](docs/manifesto.md) | The case for evidence over scores |
+| [`docs/interview-philosophy.md`](docs/interview-philosophy.md) | What a good interview is actually for |
+| [`docs/product-principles.md`](docs/product-principles.md) | The principles every feature decision is checked against |
+| [`docs/ai-charter.md`](docs/ai-charter.md) | What the AI is for, and what it's never allowed to do |
+| [`docs/responsible-ai.md`](docs/responsible-ai.md) | The risk being designed against, and where responsibility sits |
+| [`docs/engineering-principles.md`](docs/engineering-principles.md) | How those principles translate into how we build |
 
 ---
 
@@ -313,17 +341,7 @@ bun run format
 
 Contributions are welcome — a bug fix, a UI refinement, or a discussion about where the persistence layer or multi-interview support should go next. Before proposing a new AI capability, it's worth reading [`docs/ai-charter.md`](docs/ai-charter.md): the standard for whether something belongs in Potential is simple — does it help an interviewer collect better evidence, or does it start making the decision for them. If it's the second, it doesn't ship, regardless of how capable the underlying model gets.
 
-Further reading, if you want the full reasoning behind the product:
-
-| Document | What it covers |
-|---|---|
-| [`docs/north-star.md`](docs/north-star.md) | Why Potential exists, and what it will never become |
-| [`docs/manifesto.md`](docs/manifesto.md) | The case for evidence over scores |
-| [`docs/interview-philosophy.md`](docs/interview-philosophy.md) | What a good interview is actually for |
-| [`docs/product-principles.md`](docs/product-principles.md) | The principles every feature decision is checked against |
-| [`docs/ai-charter.md`](docs/ai-charter.md) | What the AI is for, and what it's never allowed to do |
-| [`docs/responsible-ai.md`](docs/responsible-ai.md) | The risk being designed against, and where responsibility sits |
-| [`docs/engineering-principles.md`](docs/engineering-principles.md) | How those principles translate into how we build |
+See [Learn more](#learn-more) for the full set of product philosophy documents.
 
 ---
 
