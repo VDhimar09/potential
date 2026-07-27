@@ -363,7 +363,7 @@ src/
                in-progress analysis.
 
 docs/          The product's philosophy, written down rather than left implicit —
-               see "Development" above for what each document covers.
+               see "Learn more" above for what each document covers.
 ```
 
 ---
