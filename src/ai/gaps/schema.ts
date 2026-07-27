@@ -36,11 +36,37 @@ export function buildEvidenceGapAnalysisSchema(
     explanation: z.string().min(1),
   });
 
-  return z.object({
-    summary: z.string().min(1),
-    coveredCompetencies: z.array(competencyEnum),
-    missingCompetencies: z.array(competencyGapSchema),
-    completedObjectives: z.array(objectiveEnum),
-    incompleteObjectives: z.array(objectiveGapSchema),
+  const evidenceGapSchema = z.object({
+    capability: competencyEnum,
+    status: z.enum(["missing", "partial"]),
+    reason: z.string().min(1),
+    suggestedFocus: z.string().min(1),
+    priority: z.enum(["high", "medium", "low"]),
   });
+
+  return z
+    .object({
+      summary: z.string().min(1),
+      coveredCompetencies: z.array(competencyEnum),
+      missingCompetencies: z.array(competencyGapSchema),
+      completedObjectives: z.array(objectiveEnum),
+      incompleteObjectives: z.array(objectiveGapSchema),
+      gaps: z.array(evidenceGapSchema),
+    })
+    .superRefine((analysis, ctx) => {
+      // `gaps` is the richer counterpart to `missingCompetencies` — they must
+      // describe the exact same set of competencies, or the two views of the
+      // same judgement could silently disagree.
+      const missingSet = new Set(analysis.missingCompetencies.map((gap) => gap.competency));
+      const gapsSet = new Set(analysis.gaps.map((gap) => gap.capability));
+      const mismatch =
+        missingSet.size !== gapsSet.size || [...missingSet].some((c) => !gapsSet.has(c));
+      if (mismatch) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "gaps must reference exactly the competencies listed in missingCompetencies",
+          path: ["gaps"],
+        });
+      }
+    });
 }

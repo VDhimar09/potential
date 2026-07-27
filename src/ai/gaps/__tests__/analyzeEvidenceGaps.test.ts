@@ -35,6 +35,15 @@ describe("analyzeEvidenceGaps", () => {
       incompleteObjectives: [
         { objective: "Understand leadership", explanation: "Only indirect evidence so far." },
       ],
+      gaps: [
+        {
+          capability: "Leadership",
+          status: "missing" as const,
+          reason: "No evidence of leading through disagreement yet.",
+          suggestedFocus: "Listen for how they've handled team disagreement.",
+          priority: "high" as const,
+        },
+      ],
     };
     const client = fakeClient(vi.fn().mockResolvedValue(modelOutput));
 
@@ -55,6 +64,22 @@ describe("analyzeEvidenceGaps", () => {
       incompleteObjectives: [
         { objective: "Understand leadership", explanation: "No evidence collected yet." },
       ],
+      gaps: [
+        {
+          capability: "Systems thinking",
+          status: "missing" as const,
+          reason: "No evidence collected yet.",
+          suggestedFocus: "Ask about a technical decision made under uncertainty.",
+          priority: "medium" as const,
+        },
+        {
+          capability: "Leadership",
+          status: "missing" as const,
+          reason: "No evidence collected yet.",
+          suggestedFocus: "Ask about a time they had to lead through disagreement.",
+          priority: "high" as const,
+        },
+      ],
     };
     const parse = vi.fn().mockResolvedValue(modelOutput);
     const client = fakeClient(parse);
@@ -73,6 +98,7 @@ describe("analyzeEvidenceGaps", () => {
       missingCompetencies: [],
       completedObjectives: [],
       incompleteObjectives: [],
+      gaps: [],
     });
     const client = fakeClient(parse);
 
@@ -92,6 +118,7 @@ describe("analyzeEvidenceGaps", () => {
       missingCompetencies: [],
       completedObjectives: [],
       incompleteObjectives: [],
+      gaps: [],
     });
     const client = fakeClient(parse);
 
@@ -125,6 +152,7 @@ describe("analyzeEvidenceGaps", () => {
         missingCompetencies: [],
         completedObjectives: [],
         incompleteObjectives: [],
+        gaps: [],
       }),
     );
 

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { Evidence } from "@/domain";
+import type { Evidence, EvidenceGap } from "@/domain";
 import { interviewService } from "@/services/interviewService";
 
 export const Route = createFileRoute("/playground/evidence")({
@@ -32,22 +32,30 @@ function parseCompetencies(raw: string): string[] {
 function EvidencePlayground() {
   const [question, setQuestion] = useState("");
   const [competenciesText, setCompetenciesText] = useState("");
+  const [objectivesText, setObjectivesText] = useState("");
   const [response, setResponse] = useState("");
   const [evidence, setEvidence] = useState<Evidence[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gaps, setGaps] = useState<EvidenceGap[] | null>(null);
+  const [isAnalyzingGaps, setIsAnalyzingGaps] = useState(false);
+  const [gapsError, setGapsError] = useState<string | null>(null);
 
   const competencies = parseCompetencies(competenciesText);
+  const objectives = parseCompetencies(objectivesText);
   const canSubmit =
     question.trim().length > 0 &&
     response.trim().length > 0 &&
     competencies.length > 0 &&
     !isLoading;
+  const canAnalyzeGaps = evidence !== null && objectives.length > 0 && !isAnalyzingGaps;
 
   async function handleExtract() {
     if (!canSubmit) return;
     setIsLoading(true);
     setError(null);
+    setGaps(null);
+    setGapsError(null);
     try {
       const result = await interviewService.analyseResponse({
         question: question.trim(),
@@ -60,6 +68,25 @@ function EvidencePlayground() {
       setError(err instanceof Error ? err.message : "Evidence extraction failed.");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleAnalyzeGaps() {
+    if (!canAnalyzeGaps || evidence === null) return;
+    setIsAnalyzingGaps(true);
+    setGapsError(null);
+    try {
+      const result = await interviewService.analyzeGaps({
+        competencies,
+        objectives,
+        evidence,
+      });
+      setGaps(result.gaps ?? []);
+    } catch (err) {
+      setGaps(null);
+      setGapsError(err instanceof Error ? err.message : "Evidence gap analysis failed.");
+    } finally {
+      setIsAnalyzingGaps(false);
     }
   }
 
@@ -97,6 +124,17 @@ function EvidencePlayground() {
             value={competenciesText}
             onChange={(e) => setCompetenciesText(e.target.value)}
             placeholder="e.g. Systems thinking, Leadership"
+            className="mt-1.5"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="objectives">Interview objectives (comma-separated)</Label>
+          <Input
+            id="objectives"
+            value={objectivesText}
+            onChange={(e) => setObjectivesText(e.target.value)}
+            placeholder="e.g. Understand how they lead through disagreement"
             className="mt-1.5"
           />
         </div>
@@ -140,6 +178,47 @@ function EvidencePlayground() {
           {evidence.map((item, i) => (
             <EvidenceCard key={i} evidence={item} />
           ))}
+
+          <Button
+            variant="outline"
+            onClick={handleAnalyzeGaps}
+            disabled={!canAnalyzeGaps}
+            className="mt-2"
+          >
+            {isAnalyzingGaps ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Analyzing…
+              </>
+            ) : (
+              "Analyze Evidence Gaps"
+            )}
+          </Button>
+          {objectives.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              Add at least one interview objective above to analyze gaps.
+            </p>
+          )}
+        </div>
+      )}
+
+      {gapsError && (
+        <div className="mt-6 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {gapsError}
+        </div>
+      )}
+
+      {gaps && (
+        <div className="mt-8 space-y-3">
+          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Evidence Still Needed
+          </div>
+          {gaps.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Every assessed competency is sufficiently covered by the evidence collected so far.
+            </p>
+          ) : (
+            gaps.map((gap, i) => <GapCard key={i} gap={gap} />)
+          )}
         </div>
       )}
     </div>
@@ -189,6 +268,53 @@ function EvidenceCard({ evidence }: { evidence: Evidence }) {
           <Badge variant="outline" className={cn(STRENGTH_BADGE_CLASS[evidence.strength])}>
             {STRENGTH_LABEL[evidence.strength]}
           </Badge>
+        </Field>
+      </CardContent>
+    </Card>
+  );
+}
+
+const GAP_STATUS_LABEL: Record<EvidenceGap["status"], string> = {
+  missing: "Missing",
+  partial: "Partial",
+};
+
+const GAP_STATUS_BADGE_CLASS: Record<EvidenceGap["status"], string> = {
+  missing: "border-hairline bg-surface text-muted-foreground",
+  partial: "border-amber-500/25 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+};
+
+// Priority is about where the interviewer should spend remaining time, never
+// a judgement of the candidate — the labels are deliberately about urgency,
+// not quality.
+const GAP_PRIORITY_LABEL: Record<EvidenceGap["priority"], string> = {
+  high: "High priority",
+  medium: "Medium priority",
+  low: "Low priority",
+};
+
+function GapCard({ gap }: { gap: EvidenceGap }) {
+  return (
+    <Card>
+      <CardContent className="space-y-3 p-5">
+        <div className="flex items-start justify-between gap-3">
+          <Field label="Capability">
+            <div className="text-sm font-medium text-foreground">{gap.capability}</div>
+          </Field>
+          <div className="flex shrink-0 gap-1.5">
+            <Badge variant="outline" className={cn(GAP_STATUS_BADGE_CLASS[gap.status])}>
+              {GAP_STATUS_LABEL[gap.status]}
+            </Badge>
+            <Badge variant="outline">{GAP_PRIORITY_LABEL[gap.priority]}</Badge>
+          </div>
+        </div>
+
+        <Field label="Explanation">
+          <p className="text-sm text-muted-foreground">{gap.reason}</p>
+        </Field>
+
+        <Field label="Suggested Interview Focus">
+          <p className="text-sm text-foreground/90">{gap.suggestedFocus}</p>
         </Field>
       </CardContent>
     </Card>

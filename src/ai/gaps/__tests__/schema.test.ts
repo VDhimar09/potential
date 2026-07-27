@@ -35,6 +35,15 @@ describe("buildEvidenceGapAnalysisSchema", () => {
           explanation: "Only one leadership example has been given so far.",
         },
       ],
+      gaps: [
+        {
+          capability: "Leadership",
+          status: "missing",
+          reason: "No evidence of leading through disagreement yet.",
+          suggestedFocus: "Listen for how they've handled team disagreement.",
+          priority: "high",
+        },
+      ],
     });
 
     expect(result.success).toBe(true);
@@ -48,6 +57,41 @@ describe("buildEvidenceGapAnalysisSchema", () => {
       missingCompetencies: [],
       completedObjectives: objectives,
       incompleteObjectives: [],
+      gaps: [],
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts a partial gap alongside a fully missing one", () => {
+    const schema = buildEvidenceGapAnalysisSchema(competencies, objectives);
+    const result = schema.safeParse({
+      summary: "Some leadership evidence exists but doesn't fully address disagreement handling.",
+      coveredCompetencies: [],
+      missingCompetencies: [
+        { competency: "Systems thinking", explanation: "No evidence collected yet." },
+        { competency: "Leadership", explanation: "Only indirect evidence so far." },
+      ],
+      completedObjectives: [],
+      incompleteObjectives: [
+        { objective: "Understand leadership", explanation: "Only indirect evidence so far." },
+      ],
+      gaps: [
+        {
+          capability: "Systems thinking",
+          status: "missing",
+          reason: "No evidence collected yet.",
+          suggestedFocus: "Ask about a technical decision made under uncertainty.",
+          priority: "medium",
+        },
+        {
+          capability: "Leadership",
+          status: "partial",
+          reason: "Only indirect evidence so far.",
+          suggestedFocus: "Listen for how they've handled direct disagreement.",
+          priority: "high",
+        },
+      ],
     });
 
     expect(result.success).toBe(true);
@@ -61,6 +105,77 @@ describe("buildEvidenceGapAnalysisSchema", () => {
       missingCompetencies: [],
       completedObjectives: [],
       incompleteObjectives: [],
+      gaps: [],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a gaps entry referencing a capability outside the assessed list", () => {
+    const schema = buildEvidenceGapAnalysisSchema(competencies, objectives);
+    const result = schema.safeParse({
+      summary: "...",
+      coveredCompetencies: [],
+      missingCompetencies: [{ competency: "Leadership", explanation: "Not yet demonstrated." }],
+      completedObjectives: [],
+      incompleteObjectives: [],
+      gaps: [
+        {
+          capability: "Communication", // not in the assessed list, and not in missingCompetencies
+          status: "missing",
+          reason: "Not yet demonstrated.",
+          suggestedFocus: "Ask about a time they had to explain a decision.",
+          priority: "low",
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects when gaps doesn't match the competencies listed in missingCompetencies", () => {
+    const schema = buildEvidenceGapAnalysisSchema(competencies, objectives);
+    const result = schema.safeParse({
+      summary: "...",
+      coveredCompetencies: [],
+      missingCompetencies: [
+        { competency: "Leadership", explanation: "Not yet demonstrated." },
+        { competency: "Systems thinking", explanation: "Not yet demonstrated." },
+      ],
+      completedObjectives: [],
+      incompleteObjectives: [],
+      gaps: [
+        // Only one of the two missing competencies has a corresponding gap.
+        {
+          capability: "Leadership",
+          status: "missing",
+          reason: "Not yet demonstrated.",
+          suggestedFocus: "Ask about a time they had to lead through disagreement.",
+          priority: "high",
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a gaps entry with an invalid status", () => {
+    const schema = buildEvidenceGapAnalysisSchema(competencies, objectives);
+    const result = schema.safeParse({
+      summary: "...",
+      coveredCompetencies: [],
+      missingCompetencies: [{ competency: "Leadership", explanation: "Not yet demonstrated." }],
+      completedObjectives: [],
+      incompleteObjectives: [],
+      gaps: [
+        {
+          capability: "Leadership",
+          status: "not-covered-at-all", // not a valid status
+          reason: "Not yet demonstrated.",
+          suggestedFocus: "Ask about a time they had to lead through disagreement.",
+          priority: "high",
+        },
+      ],
     });
 
     expect(result.success).toBe(false);
@@ -74,6 +189,7 @@ describe("buildEvidenceGapAnalysisSchema", () => {
       missingCompetencies: [],
       completedObjectives: ["Ship a project"], // not in the assessed list
       incompleteObjectives: [],
+      gaps: [],
     });
 
     expect(result.success).toBe(false);
@@ -87,6 +203,7 @@ describe("buildEvidenceGapAnalysisSchema", () => {
       missingCompetencies: [{ competency: "Leadership", explanation: "" }],
       completedObjectives: [],
       incompleteObjectives: [],
+      gaps: [],
     });
 
     expect(result.success).toBe(false);
@@ -100,6 +217,7 @@ describe("buildEvidenceGapAnalysisSchema", () => {
       missingCompetencies: [],
       completedObjectives: [],
       incompleteObjectives: [],
+      gaps: [],
     });
 
     expect(result.success).toBe(false);
