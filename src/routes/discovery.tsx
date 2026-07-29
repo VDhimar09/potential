@@ -100,8 +100,8 @@ function Discovery() {
 
         <div className="mt-10 max-w-2xl space-y-5 text-[17px] leading-[1.65] text-foreground/85">
           <p>
-            Potential is a personal AI product exploring how technology can help hiring teams
-            better understand candidate capability without replacing human judgement.
+            Potential is a personal AI product exploring how technology can help hiring teams better
+            understand candidate capability without replacing human judgement.
           </p>
           <p>
             This project is inspired by my own interview experiences and is evolving through

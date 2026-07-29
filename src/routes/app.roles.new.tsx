@@ -63,20 +63,29 @@ function CreateRole() {
 
   return (
     <div className="relative">
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[300px] bg-aurora-soft opacity-60" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[300px] bg-aurora-soft opacity-60"
+      />
 
       <div className="relative mx-auto max-w-[900px] px-8 pb-32 pt-10">
-        <Link to="/app" className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground">
+        <Link
+          to="/app"
+          className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+        >
           <ArrowLeft className="h-3.5 w-3.5" /> Workspace
         </Link>
 
         <div className="mt-8 rise-in">
-          <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground/80">New role</div>
+          <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground/80">
+            New role
+          </div>
           <h1 className="mt-3 font-display text-[44px] leading-[1.05] tracking-tight text-foreground md:text-[56px]">
             What are you hiring for?
           </h1>
           <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
-            Describe the role. Potential will suggest interview objectives and the evidence worth collecting — humans always shape the final plan.
+            Describe the role. Potential will suggest interview objectives and the evidence worth
+            collecting — humans always shape the final plan.
           </p>
         </div>
 
@@ -118,7 +127,8 @@ function CreateRole() {
                       : "cursor-not-allowed bg-muted text-muted-foreground",
                   )}
                 >
-                  <Sparkles className="h-3.5 w-3.5" /> {isAnalyzing ? "Analysing…" : "Suggest objectives"}
+                  <Sparkles className="h-3.5 w-3.5" />{" "}
+                  {isAnalyzing ? "Analysing…" : "Suggest objectives"}
                 </button>
               </div>
             </div>
@@ -131,7 +141,9 @@ function CreateRole() {
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary/15 text-secondary">
                   <Sparkles className="h-3.5 w-3.5" />
                 </div>
-                <div className="text-[13px] font-medium text-foreground">Potential's suggestions</div>
+                <div className="text-[13px] font-medium text-foreground">
+                  Potential's suggestions
+                </div>
                 <div className="text-[11px] text-muted-foreground">Accept, edit, or ignore</div>
               </div>
               <div className="space-y-2">
@@ -142,7 +154,9 @@ function CreateRole() {
                       key={objective}
                       onClick={() =>
                         setObjectives((prev) =>
-                          prev.includes(objective) ? prev.filter((x) => x !== objective) : [...prev, objective],
+                          prev.includes(objective)
+                            ? prev.filter((x) => x !== objective)
+                            : [...prev, objective],
                         )
                       }
                       className={cn(
@@ -152,10 +166,14 @@ function CreateRole() {
                           : "border-hairline/70 bg-background/60 hover:border-hairline",
                       )}
                     >
-                      <div className={cn(
-                        "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
-                        active ? "border-secondary bg-secondary text-secondary-foreground" : "border-hairline",
-                      )}>
+                      <div
+                        className={cn(
+                          "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
+                          active
+                            ? "border-secondary bg-secondary text-secondary-foreground"
+                            : "border-hairline",
+                        )}
+                      >
                         {active && <Check className="h-3 w-3" />}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -170,7 +188,10 @@ function CreateRole() {
 
           {/* Role summary + key responsibilities — Potential's draft, edited by the interviewer */}
           {blueprint && (
-            <Field label="Role summary" help="Potential's read of the role, grounded in the job description — edit until it matches your intent.">
+            <Field
+              label="Role summary"
+              help="Potential's read of the role, grounded in the job description — edit until it matches your intent."
+            >
               <textarea
                 value={roleSummary}
                 onChange={(e) => setRoleSummary(e.target.value)}
@@ -181,7 +202,10 @@ function CreateRole() {
           )}
 
           {blueprint && (
-            <Field label="Key responsibilities" help="One per line, drawn from the job description — add, remove, or reword freely.">
+            <Field
+              label="Key responsibilities"
+              help="One per line, drawn from the job description — add, remove, or reword freely."
+            >
               <textarea
                 value={responsibilitiesText}
                 onChange={(e) => setResponsibilitiesText(e.target.value)}
@@ -195,10 +219,13 @@ function CreateRole() {
           <Field label="Competencies" help="What capability must this role demonstrate?">
             <div className="flex flex-wrap gap-2">
               {comps.map((c) => (
-                <span key={c} className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-background/70 py-1 pl-3 pr-1.5 text-[13px]">
+                <span
+                  key={c}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-background/70 py-1 pl-3 pr-1.5 text-[13px]"
+                >
                   {c}
                   <button
-                    onClick={() => setComps(comps.filter(x => x !== c))}
+                    onClick={() => setComps(comps.filter((x) => x !== c))}
                     className="flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
                   >
                     <X className="h-3 w-3" />
@@ -219,12 +246,17 @@ function CreateRole() {
 
           {/* Evidence plan — what to listen for, never what to ask */}
           {blueprint && (
-            <Field label="Evidence plan" help="What to listen for during the interview. Potential never suggests what to ask.">
+            <Field
+              label="Evidence plan"
+              help="What to listen for during the interview. Potential never suggests what to ask."
+            >
               <ul className="space-y-2">
                 {blueprint.evidencePlan.map((item, i) => (
                   <li key={i} className="rounded-xl border border-hairline/70 bg-background/60 p-4">
                     <div className="text-[13px] font-medium text-foreground">{item.competency}</div>
-                    <div className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{item.guidance}</div>
+                    <div className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
+                      {item.guidance}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -232,10 +264,16 @@ function CreateRole() {
           )}
 
           {/* Interview plan */}
-          <Field label="Interview plan" help="Potential drafts a natural flow. You can rearrange freely.">
+          <Field
+            label="Interview plan"
+            help="Potential drafts a natural flow. You can rearrange freely."
+          >
             <ol className="space-y-2">
               {DEFAULT_INTERVIEW_PLAN.map((step, i) => (
-                <li key={step} className="flex items-start gap-4 rounded-xl border border-hairline/70 bg-background/60 p-4">
+                <li
+                  key={step}
+                  className="flex items-start gap-4 rounded-xl border border-hairline/70 bg-background/60 p-4"
+                >
                   <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-foreground/[0.06] text-[11px] font-medium tabular-nums text-muted-foreground">
                     {i + 1}
                   </span>
@@ -262,11 +300,21 @@ function CreateRole() {
   );
 }
 
-function Field({ label, help, children }: { label: string; help?: string; children: React.ReactNode }) {
+function Field({
+  label,
+  help,
+  children,
+}: {
+  label: string;
+  help?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <div className="mb-3">
-        <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+        <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+          {label}
+        </div>
         {help && <div className="mt-1 text-[12px] text-muted-foreground/80">{help}</div>}
       </div>
       {children}

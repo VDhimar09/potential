@@ -1,7 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Mic, Pause, Circle, FileText, Sparkles, ChevronRight, Info, Check } from "lucide-react";
+import {
+  ArrowLeft,
+  Mic,
+  Pause,
+  Circle,
+  FileText,
+  Sparkles,
+  ChevronRight,
+  Info,
+  Check,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ALEX_MORGAN } from "@/lib/mock/candidates";
 import { INTERVIEW_TIMELINE, CANDIDATE_OBJECTIVES } from "@/lib/mock/interviews";
@@ -59,7 +69,9 @@ function LiveInterview() {
   // confirmation, not a modal requiring a decision.
   useEffect(() => {
     if (!reflection || !reflection.isComplete) return;
-    toast.success("This interview appears complete — every competency and objective has supporting evidence so far.");
+    toast.success(
+      "This interview appears complete — every competency and objective has supporting evidence so far.",
+    );
     dismissReflection();
   }, [reflection, dismissReflection]);
 
@@ -81,7 +93,10 @@ function LiveInterview() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Top bar */}
       <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b border-hairline/70 bg-background/80 px-6 backdrop-blur-2xl">
-        <Link to="/app" className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground transition-colors hover:text-foreground">
+        <Link
+          to="/app"
+          className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground transition-colors hover:text-foreground"
+        >
           <ArrowLeft className="h-3.5 w-3.5" /> Workspace
         </Link>
         <div className="h-4 w-px bg-hairline" />
@@ -91,10 +106,13 @@ function LiveInterview() {
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-red-500" />
           </span>
           <span className="text-[12px] font-medium text-foreground">Recording</span>
-          <span className="text-[12px] tabular-nums text-muted-foreground">{mm}:{ss}</span>
+          <span className="text-[12px] tabular-nums text-muted-foreground">
+            {mm}:{ss}
+          </span>
         </div>
         <div className="mx-auto text-[12px] text-muted-foreground">
-          <span className="text-foreground">{ALEX_MORGAN.name}</span> · {ALEX_MORGAN.role} · Exploring <span className="text-foreground">leadership</span>
+          <span className="text-foreground">{ALEX_MORGAN.name}</span> · {ALEX_MORGAN.role} ·
+          Exploring <span className="text-foreground">leadership</span>
         </div>
         <div className="flex items-center gap-2">
           <button className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground">
@@ -119,7 +137,9 @@ function LiveInterview() {
             </div>
             <div>
               <div className="text-[15px] font-medium">{ALEX_MORGAN.name}</div>
-              <div className="text-[12px] text-muted-foreground">{ALEX_MORGAN.role} · {ALEX_MORGAN.location}</div>
+              <div className="text-[12px] text-muted-foreground">
+                {ALEX_MORGAN.role} · {ALEX_MORGAN.location}
+              </div>
             </div>
           </div>
 
@@ -137,7 +157,10 @@ function LiveInterview() {
           <SectionTitle>Projects</SectionTitle>
           <ul className="space-y-1 text-[12px]">
             {(ALEX_MORGAN.projects ?? []).map((p) => (
-              <li key={p} className="rounded-md px-2 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground">
+              <li
+                key={p}
+                className="rounded-md px-2 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
+              >
                 {p}
               </li>
             ))}
@@ -147,13 +170,17 @@ function LiveInterview() {
           <div className="space-y-1.5">
             {CANDIDATE_OBJECTIVES.map((o) => (
               <div key={o.label} className="flex items-center gap-2 text-[12px]">
-                <span className={cn(
-                  "h-1.5 w-1.5 rounded-full",
-                  o.state === "done" && "bg-emerald",
-                  o.state === "active" && "bg-secondary glow-pulse",
-                  o.state === "next" && "bg-muted-foreground/40",
-                )} />
-                <span className={o.state === "next" ? "text-muted-foreground" : "text-foreground"}>{o.label}</span>
+                <span
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full",
+                    o.state === "done" && "bg-emerald",
+                    o.state === "active" && "bg-secondary glow-pulse",
+                    o.state === "next" && "bg-muted-foreground/40",
+                  )}
+                />
+                <span className={o.state === "next" ? "text-muted-foreground" : "text-foreground"}>
+                  {o.label}
+                </span>
               </div>
             ))}
           </div>
@@ -162,14 +189,18 @@ function LiveInterview() {
           <ol className="relative space-y-3.5 border-l border-hairline/70 pl-4">
             {INTERVIEW_TIMELINE.map((t) => (
               <li key={t.t} className="relative">
-                <span className={cn(
-                  "absolute -left-[21px] top-1 flex h-2.5 w-2.5 items-center justify-center rounded-full border-2 border-surface",
-                  t.kind === "start" && "bg-muted-foreground/50",
-                  t.kind === "evidence" && "bg-emerald",
-                  t.kind === "pivot" && "bg-secondary",
-                  t.kind === "pending" && "bg-amber-500 glow-pulse",
-                )} />
-                <div className="text-[10px] font-medium tabular-nums text-muted-foreground/70">{t.t}</div>
+                <span
+                  className={cn(
+                    "absolute -left-[21px] top-1 flex h-2.5 w-2.5 items-center justify-center rounded-full border-2 border-surface",
+                    t.kind === "start" && "bg-muted-foreground/50",
+                    t.kind === "evidence" && "bg-emerald",
+                    t.kind === "pivot" && "bg-secondary",
+                    t.kind === "pending" && "bg-amber-500 glow-pulse",
+                  )}
+                />
+                <div className="text-[10px] font-medium tabular-nums text-muted-foreground/70">
+                  {t.t}
+                </div>
                 <div className="text-[12px] leading-snug text-foreground">{t.label}</div>
               </li>
             ))}
@@ -178,9 +209,18 @@ function LiveInterview() {
 
         {/* CENTRE — conversation */}
         <section className="relative flex min-h-[calc(100vh-3.5rem)] flex-col overflow-hidden">
-          <div aria-hidden className="pointer-events-none absolute inset-0 bg-aurora opacity-25 aurora-drift" />
-          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-background to-transparent" />
-          <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-32 h-40 bg-gradient-to-t from-background to-transparent" />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-aurora opacity-25 aurora-drift"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-background to-transparent"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-32 h-40 bg-gradient-to-t from-background to-transparent"
+          />
 
           <div className="relative flex-1 overflow-y-auto px-12 py-14">
             <div className="mx-auto max-w-2xl">
@@ -197,15 +237,27 @@ function LiveInterview() {
 
               <div className="mt-12 space-y-9">
                 {transcript.map((line, i) => (
-                  <div key={i} className="rise-in" style={{ animationDelay: `${Math.min(i, 12) * 80}ms` }}>
+                  <div
+                    key={i}
+                    className="rise-in"
+                    style={{ animationDelay: `${Math.min(i, 12) * 80}ms` }}
+                  >
                     <div className="flex items-baseline gap-3 text-[11px] uppercase tracking-[0.18em] text-muted-foreground/70">
-                      <span className={line.speaker === "You" ? "text-muted-foreground/70" : "text-secondary"}>{line.speaker}</span>
+                      <span
+                        className={
+                          line.speaker === "You" ? "text-muted-foreground/70" : "text-secondary"
+                        }
+                      >
+                        {line.speaker}
+                      </span>
                       <span className="tabular-nums text-muted-foreground/50">{line.t}</span>
                     </div>
-                    <p className={cn(
-                      "mt-2 text-[17px] leading-[1.7] tracking-[-0.005em]",
-                      line.speaker === "You" ? "text-muted-foreground" : "text-foreground",
-                    )}>
+                    <p
+                      className={cn(
+                        "mt-2 text-[17px] leading-[1.7] tracking-[-0.005em]",
+                        line.speaker === "You" ? "text-muted-foreground" : "text-foreground",
+                      )}
+                    >
                       {line.text}
                     </p>
                   </div>
@@ -224,7 +276,9 @@ function LiveInterview() {
                 </button>
                 <Waveform />
                 <div className="shrink-0 text-right">
-                  <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/70">Voice</div>
+                  <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground/70">
+                    Voice
+                  </div>
                   <div className="text-[13px] text-foreground">Streaming</div>
                 </div>
               </div>
@@ -253,7 +307,8 @@ function LiveInterview() {
                   disabled={isAnalysing || draftResponse.trim().length === 0}
                   className="btn-primary-gradient inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-medium transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  <Sparkles className="h-3.5 w-3.5" /> {isAnalysing ? "Analysing…" : "Analyse response"}
+                  <Sparkles className="h-3.5 w-3.5" />{" "}
+                  {isAnalysing ? "Analysing…" : "Analyse response"}
                 </button>
               </div>
             </div>
@@ -262,7 +317,10 @@ function LiveInterview() {
 
         {/* RIGHT — reasoning */}
         <aside className="relative border-l border-hairline/70 bg-surface/40 p-7">
-          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-aurora-soft opacity-70" />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-aurora-soft opacity-70"
+          />
 
           <div className="relative">
             <div className="flex items-center gap-2">
@@ -270,14 +328,19 @@ function LiveInterview() {
                 <Sparkles className="h-3.5 w-3.5" />
               </div>
               <div className="text-[12px] font-medium text-foreground">Potential intelligence</div>
-              <span className="ml-auto text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">Live</span>
+              <span className="ml-auto text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
+                Live
+              </span>
             </div>
 
             <div className="mt-6">
               <Label>Current objective</Label>
-              <div className="mt-1.5 font-display text-[24px] leading-tight text-foreground">Understand leadership</div>
+              <div className="mt-1.5 font-display text-[24px] leading-tight text-foreground">
+                Understand leadership
+              </div>
               <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">
-                Not "did they lead well" — but "have I heard enough to fairly understand how they lead."
+                Not "did they lead well" — but "have I heard enough to fairly understand how they
+                lead."
               </p>
             </div>
 
@@ -291,7 +354,8 @@ function LiveInterview() {
               ) : (
                 evidence.map((e, i) => (
                   <BulletItem key={i}>
-                    <span className="font-medium text-foreground">{e.competency}:</span> {e.reasoning}
+                    <span className="font-medium text-foreground">{e.competency}:</span>{" "}
+                    {e.reasoning}
                   </BulletItem>
                 ))
               )}
@@ -309,7 +373,8 @@ function LiveInterview() {
               ) : (
                 gapAnalysis.missingCompetencies.map((gap, i) => (
                   <BulletItem key={i}>
-                    <span className="font-medium text-foreground">{gap.competency}:</span> {gap.explanation}
+                    <span className="font-medium text-foreground">{gap.competency}:</span>{" "}
+                    {gap.explanation}
                   </BulletItem>
                 ))
               )}
@@ -317,25 +382,32 @@ function LiveInterview() {
 
             <ReasoningBlock title="Current understanding" tone="neutral">
               <p className="text-[13px] leading-relaxed text-muted-foreground">
-                {gapAnalysis?.summary ?? "Submit a response to see Potential's understanding so far."}
+                {gapAnalysis?.summary ??
+                  "Submit a response to see Potential's understanding so far."}
               </p>
             </ReasoningBlock>
 
             <div className="relative mt-6 overflow-hidden rounded-2xl border border-secondary/30 bg-secondary/[0.06] p-5">
-              <div aria-hidden className="pointer-events-none absolute inset-0 bg-aurora opacity-40" />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 bg-aurora opacity-40"
+              />
               <div className="relative">
                 <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.18em] text-secondary">
                   <ChevronRight className="h-3 w-3" /> Suggested follow-up
                 </div>
                 <p className="mt-3 text-[15px] leading-snug text-foreground">
-                  {followUpSuggestion?.question ?? "Submit a response to see Potential's suggested follow-up."}
+                  {followUpSuggestion?.question ??
+                    "Submit a response to see Potential's suggested follow-up."}
                 </p>
                 {followUpSuggestion && (
                   <div className="mt-4 flex items-start gap-2 text-[11px] leading-relaxed text-muted-foreground">
                     <Info className="mt-0.5 h-3 w-3 shrink-0" />
                     <span>
-                      <span className="font-medium text-foreground/80">{followUpSuggestion.addressesCompetency}</span> ·{" "}
-                      {followUpSuggestion.reason}
+                      <span className="font-medium text-foreground/80">
+                        {followUpSuggestion.addressesCompetency}
+                      </span>{" "}
+                      · {followUpSuggestion.reason}
                     </span>
                   </div>
                 )}
@@ -345,7 +417,8 @@ function LiveInterview() {
             <SectionTitle>Evidence map</SectionTitle>
             <Constellation />
             <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground/80">
-              Bright nodes glow with evidence. Dim nodes are still being explored. Hover to reveal supporting moments.
+              Bright nodes glow with evidence. Dim nodes are still being explored. Hover to reveal
+              supporting moments.
             </p>
 
             <Link
@@ -399,15 +472,22 @@ function Constellation() {
   return (
     <div className="relative mt-2 aspect-[4/3] w-full overflow-hidden rounded-2xl border border-hairline/60 bg-background/60 backdrop-blur">
       <div aria-hidden className="pointer-events-none absolute inset-0 bg-aurora-soft opacity-60" />
-      <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
+      <svg
+        viewBox="0 0 100 100"
+        className="absolute inset-0 h-full w-full"
+        preserveAspectRatio="none"
+      >
         {EVIDENCE_EDGES.map(([a, b], i) => {
-          const na = EVIDENCE_NODES.find(n => n.id === a)!;
-          const nb = EVIDENCE_NODES.find(n => n.id === b)!;
+          const na = EVIDENCE_NODES.find((n) => n.id === a)!;
+          const nb = EVIDENCE_NODES.find((n) => n.id === b)!;
           const opacity = Math.min(na.strength, nb.strength);
           return (
             <line
               key={i}
-              x1={na.x} y1={na.y} x2={nb.x} y2={nb.y}
+              x1={na.x}
+              y1={na.y}
+              x2={nb.x}
+              y2={nb.y}
               stroke="currentColor"
               className="text-secondary"
               strokeWidth="0.3"
@@ -425,12 +505,19 @@ function Constellation() {
           <div
             className={cn(
               "rounded-full transition-all group-hover:scale-125",
-              n.strength > 0.6 ? "bg-emerald" : n.strength > 0.3 ? "bg-secondary" : "bg-muted-foreground/40",
+              n.strength > 0.6
+                ? "bg-emerald"
+                : n.strength > 0.3
+                  ? "bg-secondary"
+                  : "bg-muted-foreground/40",
             )}
             style={{
               width: `${8 + n.strength * 12}px`,
               height: `${8 + n.strength * 12}px`,
-              boxShadow: n.strength > 0.5 ? `0 0 ${8 + n.strength * 20}px oklch(0.68 0.15 258 / ${n.strength * 0.55})` : undefined,
+              boxShadow:
+                n.strength > 0.5
+                  ? `0 0 ${8 + n.strength * 20}px oklch(0.68 0.15 258 / ${n.strength * 0.55})`
+                  : undefined,
             }}
           />
           <div className="absolute left-1/2 top-full mt-1 -translate-x-1/2 whitespace-nowrap text-[9px] font-medium text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
@@ -448,30 +535,50 @@ function Constellation() {
 function SidebarRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">{label}</span>
+      <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
+        {label}
+      </span>
       <span className="text-[12px] text-foreground">{value}</span>
     </div>
   );
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <div className="mb-2.5 mt-7 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">{children}</div>;
+  return (
+    <div className="mb-2.5 mt-7 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
+      {children}
+    </div>
+  );
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">{children}</div>;
+  return (
+    <div className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
+      {children}
+    </div>
+  );
 }
 
-function ReasoningBlock({ title, tone, children }: { title: string; tone: "ok" | "pending" | "neutral"; children: React.ReactNode }) {
+function ReasoningBlock({
+  title,
+  tone,
+  children,
+}: {
+  title: string;
+  tone: "ok" | "pending" | "neutral";
+  children: React.ReactNode;
+}) {
   return (
     <div className="mt-6">
       <div className="flex items-center gap-1.5">
-        <span className={cn(
-          "h-1.5 w-1.5 rounded-full",
-          tone === "ok" && "bg-emerald",
-          tone === "pending" && "bg-amber-500 glow-pulse",
-          tone === "neutral" && "bg-muted-foreground/50",
-        )} />
+        <span
+          className={cn(
+            "h-1.5 w-1.5 rounded-full",
+            tone === "ok" && "bg-emerald",
+            tone === "pending" && "bg-amber-500 glow-pulse",
+            tone === "neutral" && "bg-muted-foreground/50",
+          )}
+        />
         <Label>{title}</Label>
       </div>
       <div className="mt-2.5 space-y-1.5">{children}</div>
@@ -534,9 +641,12 @@ function InterviewReflectionModal({
     <Dialog open={reflection !== null} onOpenChange={(open) => !open && onDismiss()}>
       <DialogContent className="max-w-xl rounded-2xl border border-hairline/70 bg-background/95 p-7 shadow-elegant backdrop-blur-2xl">
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl font-normal text-foreground">Interview reflection</DialogTitle>
+          <DialogTitle className="font-display text-2xl font-normal text-foreground">
+            Interview reflection
+          </DialogTitle>
           <DialogDescription className="text-[13px] leading-relaxed text-muted-foreground">
-            Potential checked whether the evidence collected so far fairly covers this interview — never how the candidate performed.
+            Potential checked whether the evidence collected so far fairly covers this interview —
+            never how the candidate performed.
           </DialogDescription>
         </DialogHeader>
 
@@ -544,18 +654,22 @@ function InterviewReflectionModal({
           <div className="max-h-[55vh] space-y-6 overflow-y-auto pr-1">
             <ReflectionSection title="Evidence collected">
               {reflection.evidence.length === 0 ? (
-                <p className="text-[13px] leading-relaxed text-muted-foreground">No evidence captured yet.</p>
+                <p className="text-[13px] leading-relaxed text-muted-foreground">
+                  No evidence captured yet.
+                </p>
               ) : (
                 reflection.evidence.map((e, i) => (
                   <BulletItem key={i}>
-                    <span className="font-medium text-foreground">{e.competency}:</span> {e.reasoning}
+                    <span className="font-medium text-foreground">{e.competency}:</span>{" "}
+                    {e.reasoning}
                   </BulletItem>
                 ))
               )}
             </ReflectionSection>
 
             <ReflectionSection title="Competencies still to explore">
-              {reflection.remainingCompetencyGaps.length === 0 && reflection.remainingObjectiveGaps.length === 0 ? (
+              {reflection.remainingCompetencyGaps.length === 0 &&
+              reflection.remainingObjectiveGaps.length === 0 ? (
                 <p className="text-[13px] leading-relaxed text-muted-foreground">
                   Nothing has been analysed yet — submit at least one response before finishing.
                 </p>
@@ -563,12 +677,14 @@ function InterviewReflectionModal({
                 <>
                   {reflection.remainingCompetencyGaps.map((gap, i) => (
                     <BulletItem key={`competency-${i}`}>
-                      <span className="font-medium text-foreground">{gap.competency}:</span> {gap.explanation}
+                      <span className="font-medium text-foreground">{gap.competency}:</span>{" "}
+                      {gap.explanation}
                     </BulletItem>
                   ))}
                   {reflection.remainingObjectiveGaps.map((gap, i) => (
                     <BulletItem key={`objective-${i}`}>
-                      <span className="font-medium text-foreground">{gap.objective}:</span> {gap.explanation}
+                      <span className="font-medium text-foreground">{gap.objective}:</span>{" "}
+                      {gap.explanation}
                     </BulletItem>
                   ))}
                 </>
@@ -577,9 +693,13 @@ function InterviewReflectionModal({
 
             {reflection.followUpSuggestion && (
               <ReflectionSection title="Suggested follow-up">
-                <p className="text-[13px] leading-relaxed text-foreground">{reflection.followUpSuggestion.question}</p>
+                <p className="text-[13px] leading-relaxed text-foreground">
+                  {reflection.followUpSuggestion.question}
+                </p>
                 <p className="mt-1.5 text-[12px] leading-relaxed text-muted-foreground">
-                  <span className="font-medium text-foreground/80">{reflection.followUpSuggestion.addressesCompetency}</span>{" "}
+                  <span className="font-medium text-foreground/80">
+                    {reflection.followUpSuggestion.addressesCompetency}
+                  </span>{" "}
                   · {reflection.followUpSuggestion.reason}
                 </p>
               </ReflectionSection>

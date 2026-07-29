@@ -4,7 +4,7 @@ Before Potential is a product, it's a point of view about what an interview is a
 
 ## The question worth asking
 
-Most interviews, without meaning to, end up answering the wrong question. They optimize for *"did this person perform well just now, under pressure, in a room with a stranger?"* — which is a real thing, but a narrow and often misleading one. Confidence, fluency, and familiarity with interview conventions all shape that answer, and none of them are the thing being hired for.
+Most interviews, without meaning to, end up answering the wrong question. They optimize for _"did this person perform well just now, under pressure, in a room with a stranger?"_ — which is a real thing, but a narrow and often misleading one. Confidence, fluency, and familiarity with interview conventions all shape that answer, and none of them are the thing being hired for.
 
 Potential is built around a different question:
 
@@ -38,6 +38,6 @@ That's the only kind of follow-up Potential is built to suggest: one question, g
 
 ## The interviewer is the instrument
 
-None of this replaces the interviewer's own read of the conversation — the hesitation before an answer, the tone, the things that don't fit neatly into a competency. Potential is built to make sure the *evidence* side of that judgment is as complete and precise as it can be, so the interviewer's own instincts have better material to work with, not less to do.
+None of this replaces the interviewer's own read of the conversation — the hesitation before an answer, the tone, the things that don't fit neatly into a competency. Potential is built to make sure the _evidence_ side of that judgment is as complete and precise as it can be, so the interviewer's own instincts have better material to work with, not less to do.
 
 A good interview, in the end, is one where the candidate got a genuine chance to show what they can actually do, and the interviewer walked away with something concrete enough to explain their decision to someone who wasn't in the room. Potential exists to help with exactly that — by collecting better evidence, not by deciding what it means.

@@ -18,11 +18,17 @@ export const Route = createFileRoute("/app/journey/$id")({
 function CandidateJourney() {
   return (
     <div className="relative">
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[300px] bg-aurora-soft opacity-60" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[300px] bg-aurora-soft opacity-60"
+      />
 
       <div className="relative mx-auto max-w-[860px] px-8 pb-32 pt-10">
         <div className="flex items-center justify-between">
-          <Link to="/app" className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground">
+          <Link
+            to="/app"
+            className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+          >
             <ArrowLeft className="h-3.5 w-3.5" /> Workspace
           </Link>
           <Link
@@ -35,12 +41,15 @@ function CandidateJourney() {
         </div>
 
         <header className="mt-10 rise-in">
-          <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground/80">Candidate journey</div>
+          <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground/80">
+            Candidate journey
+          </div>
           <h1 className="mt-3 font-display text-[52px] leading-[1.05] tracking-tight text-foreground md:text-[64px]">
             {ALEX_MORGAN.name}
           </h1>
           <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
-            Every conversation, every piece of evidence, and every decision Potential made — in the order it happened. Nothing hidden.
+            Every conversation, every piece of evidence, and every decision Potential made — in the
+            order it happened. Nothing hidden.
           </p>
         </header>
 
@@ -58,19 +67,24 @@ function CandidateJourney() {
           {JOURNEY.map((item, i) => (
             <li key={i} className="relative rise-in pb-8" style={{ animationDelay: `${i * 40}ms` }}>
               <TimelineDot kind={item.kind} />
-              <div className="text-[10px] font-medium tabular-nums text-muted-foreground/70">{item.t}</div>
+              <div className="text-[10px] font-medium tabular-nums text-muted-foreground/70">
+                {item.t}
+              </div>
               <JourneyCard item={item} />
             </li>
           ))}
         </ol>
 
         <div className="mt-8 rounded-2xl border border-hairline/70 bg-background/60 p-6">
-          <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">Explainable AI</div>
+          <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            Explainable AI
+          </div>
           <p className="mt-2 font-display text-[22px] leading-tight text-foreground">
             Every follow-up Potential suggested is here — with the reason behind it.
           </p>
           <p className="mt-2 text-[13px] text-muted-foreground">
-            The AI never coached, never suggested answers, never scored. It only decided what it still needed to understand.
+            The AI never coached, never suggested answers, never scored. It only decided what it
+            still needed to understand.
           </p>
         </div>
       </div>
@@ -101,11 +115,15 @@ function JourneyCard({ item }: { item: JourneyItem }) {
     case "conversation":
       return (
         <div className="mt-1">
-          <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground/70">{item.who}</div>
-          <p className={cn(
-            "mt-1 text-[15px] leading-relaxed",
-            item.who === "You" ? "text-muted-foreground" : "text-foreground",
-          )}>
+          <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground/70">
+            {item.who}
+          </div>
+          <p
+            className={cn(
+              "mt-1 text-[15px] leading-relaxed",
+              item.who === "You" ? "text-muted-foreground" : "text-foreground",
+            )}
+          >
             {item.text}
           </p>
         </div>
@@ -115,7 +133,9 @@ function JourneyCard({ item }: { item: JourneyItem }) {
         <div className="mt-1 flex items-start gap-2 rounded-xl border border-emerald/25 bg-emerald/[0.05] p-4">
           <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald" />
           <div>
-            <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-emerald">Evidence · {item.competency}</div>
+            <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-emerald">
+              Evidence · {item.competency}
+            </div>
             <div className="mt-1 text-[14px] leading-snug text-foreground">{item.note}</div>
           </div>
         </div>
@@ -125,9 +145,13 @@ function JourneyCard({ item }: { item: JourneyItem }) {
         <div className="mt-1 flex items-start gap-2 rounded-xl border border-secondary/30 bg-secondary/[0.05] p-4">
           <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-secondary" />
           <div className="min-w-0">
-            <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-secondary">AI reasoning</div>
+            <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-secondary">
+              AI reasoning
+            </div>
             <div className="mt-1 text-[14px] leading-snug text-foreground">{item.note}</div>
-            {item.gap && <div className="mt-2 text-[12px] text-muted-foreground">Gap · {item.gap}</div>}
+            {item.gap && (
+              <div className="mt-2 text-[12px] text-muted-foreground">Gap · {item.gap}</div>
+            )}
           </div>
         </div>
       );

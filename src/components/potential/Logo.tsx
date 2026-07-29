@@ -16,9 +16,7 @@ export function Logo({ className, showWord = true }: { className?: string; showW
         </svg>
       </div>
       {showWord && (
-        <span className="text-[15px] font-semibold tracking-tight text-foreground">
-          Potential
-        </span>
+        <span className="text-[15px] font-semibold tracking-tight text-foreground">Potential</span>
       )}
     </div>
   );
