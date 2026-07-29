@@ -2,6 +2,7 @@
 
 > Evidence Intelligence for Fairer Hiring
 
+![CI](https://github.com/VDhimar09/potential/actions/workflows/ci.yml/badge.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6)
 ![React](https://img.shields.io/badge/React-19-61DAFB)
 ![OpenAI](https://img.shields.io/badge/OpenAI-Responses_API-412991)
@@ -24,7 +25,7 @@ That's the only question the product optimizes for.
 
 ![Potential — home dashboard](assets/screenshots/home.jpg)
 
-*The home workspace — where an interviewer's roles, interviews, and evidence reports come together.*
+_The home workspace — where an interviewer's roles, interviews, and evidence reports come together._
 
 ---
 
@@ -44,7 +45,7 @@ Potential exists to improve interview quality — not to automate hiring.
 
 ## Why Potential exists
 
-Most interview tooling quietly answers the wrong question. It asks *"did this candidate perform well, right now, under pressure, in front of a stranger?"* — a question that rewards confidence and fluency with interview conventions as much as it rewards actual capability. Some tools go further and let an algorithm turn that impression into a score or a rank, which doesn't remove the bias — it just launders it through a number that looks objective.
+Most interview tooling quietly answers the wrong question. It asks _"did this candidate perform well, right now, under pressure, in front of a stranger?"_ — a question that rewards confidence and fluency with interview conventions as much as it rewards actual capability. Some tools go further and let an algorithm turn that impression into a score or a rank, which doesn't remove the bias — it just launders it through a number that looks objective.
 
 Potential is built around a different question, and the architecture doesn't drift from it:
 
@@ -62,25 +63,25 @@ These aren't aspirational values — they're constraints the architecture is bui
 
 **Potential always:**
 
-| | |
-|---|---|
-| 🔍 | Helps interviewers collect trustworthy evidence |
-| 🔁 | Adapts follow-up questions when evidence is missing |
-| 🧾 | Explains every AI decision, with the quote and reasoning behind it |
-| 📋 | Produces explainable, human-readable evidence reports |
-| 🧑‍⚖️ | Keeps humans fully in control of the outcome |
+|     |                                                                    |
+| --- | ------------------------------------------------------------------ |
+| 🔍  | Helps interviewers collect trustworthy evidence                    |
+| 🔁  | Adapts follow-up questions when evidence is missing                |
+| 🧾  | Explains every AI decision, with the quote and reasoning behind it |
+| 📋  | Produces explainable, human-readable evidence reports              |
+| 🧑‍⚖️  | Keeps humans fully in control of the outcome                       |
 
 **Potential never:**
 
-| | |
-|---|---|
-| 🚫 | Scores candidates |
-| 🚫 | Ranks candidates |
-| 🚫 | Recommends a hire or reject decision |
-| 🚫 | Compares one applicant against another |
-| 🚫 | Predicts future performance |
-| 🚫 | Coaches candidates or suggests answers |
-| 🚫 | Replaces the recruiter or interviewer |
+|     |                                        |
+| --- | -------------------------------------- |
+| 🚫  | Scores candidates                      |
+| 🚫  | Ranks candidates                       |
+| 🚫  | Recommends a hire or reject decision   |
+| 🚫  | Compares one applicant against another |
+| 🚫  | Predicts future performance            |
+| 🚫  | Coaches candidates or suggests answers |
+| 🚫  | Replaces the recruiter or interviewer  |
 
 These are structural facts about the codebase, not settings someone could leave off by accident. There is no field for a score anywhere in the domain model. No engine produces a rank. No prompt asks a model to weigh in on fit.
 
@@ -88,24 +89,16 @@ These are structural facts about the codebase, not settings someone could leave 
 
 ## Product workflow
 
-```
-Role Planner
-      ↓
-Interview Blueprint
-      ↓
-Live Interview
-      ↓
-Evidence Extraction
-      ↓
-Evidence Gap Analysis
-      ↓
-Adaptive Follow-ups
-      ↓
-Reflection Check
-      ↓
-Evidence Report
-      ↓
-Candidate Journey
+```mermaid
+flowchart TD
+    A[Role Planner] --> B[Interview Blueprint]
+    B --> C[Live Interview]
+    C --> D[Evidence Extraction]
+    D --> E[Evidence Gap Analysis]
+    E --> F[Adaptive Follow-ups]
+    F --> G[Reflection Check]
+    G --> H[Evidence Report]
+    H --> I[Candidate Journey]
 ```
 
 Each stage only sees the validated output of the one before it — gap analysis reasons over typed `Evidence`, never a raw transcript; follow-up generation reasons over that evidence and the gap analysis, never a transcript either. That isolation is deliberate: it keeps every stage auditable on its own terms and stops errors (or bias) from compounding as information moves downstream.
@@ -138,21 +131,30 @@ The engines from **Evidence Extraction** through **Reflection Check** are wired 
 
 The AI layer is isolated by design: it's the only part of the codebase that knows OpenAI exists, it never runs in the browser, and no UI component talks to it directly.
 
-```
-UI (component or route) → Service layer (server-only) → AI engine → OpenAI Responses API
+```mermaid
+flowchart LR
+    UI["UI (component or route)"] --> Service["Service layer (server-only)"]
+    Service --> Engine[AI engine]
+    Engine --> OpenAI[OpenAI Responses API]
 ```
 
 Live Interview additionally holds its session state — transcript, evidence, in-progress analysis — in a Zustand store between calls. Role Planner has no session to track, so its route calls the service layer directly.
 
 ### Organized by capability, not by layer
 
-```
-src/ai/
-  evidence/       Evidence Extraction Engine
-  gaps/           Evidence Gap Analysis Engine
-  followups/      Adaptive Follow-up Engine
-  role-planner/   Role → Interview Blueprint Engine
-  shared/         Cross-engine plumbing (see below)
+```mermaid
+flowchart TD
+    subgraph src/ai
+        evidence["evidence/ — Evidence Extraction Engine"]
+        gaps["gaps/ — Evidence Gap Analysis Engine"]
+        followups["followups/ — Adaptive Follow-up Engine"]
+        rolePlanner["role-planner/ — Role → Interview Blueprint Engine"]
+        shared["shared/ — Cross-engine plumbing"]
+    end
+    evidence --> shared
+    gaps --> shared
+    followups --> shared
+    rolePlanner --> shared
 ```
 
 Each engine follows the same shape — a system prompt, a per-call Zod schema, an orchestration function, and a named error type — so a new capability is a small, predictable addition rather than a bespoke integration:
@@ -179,7 +181,7 @@ Each engine follows the same shape — a system prompt, a per-call Zod schema, a
 ### Testing in two layers
 
 - **Unit tests** run against a fake client with fixed responses — fast, deterministic, and they verify orchestration, validation, and error handling.
-- **Evaluation tests** call the real OpenAI Responses API and verify the *model's actual behavior* against the product's hard rules — for example, that it never credits a capability the candidate didn't demonstrate, that a fully-covered competency is never reported as a gap, and that it never references a capability outside the ones supplied. These are skipped automatically without an API key and run deliberately, separate from the standard test suite.
+- **Evaluation tests** call the real OpenAI Responses API and verify the _model's actual behavior_ against the product's hard rules — for example, that it never credits a capability the candidate didn't demonstrate, that a fully-covered competency is never reported as a gap, and that it never references a capability outside the ones supplied. These are skipped automatically without an API key and run deliberately, separate from the standard test suite.
 
 There's also an internal-only route, `/playground/evidence`, for exercising an engine directly against the real API while iterating on prompts — no auth, no persistence, not part of the product.
 
@@ -187,13 +189,43 @@ There's also an internal-only route, `/playground/evidence`, for exercising an e
 
 ## Tech stack
 
-| Layer | Technology |
-|---|---|
-| **Frontend** | React 19 · TypeScript · TanStack Start (Router + Query) · Tailwind CSS v4 · shadcn/ui · Zustand |
-| **AI** | OpenAI Responses API · Structured Outputs · Zod |
-| **Testing** | Vitest (unit tests + gated evaluation tests) |
-| **Deployment** | Cloudflare (via Nitro) |
-| **Tooling** | Bun · ESLint · Prettier |
+| Layer          | Technology                                                                                      |
+| -------------- | ----------------------------------------------------------------------------------------------- |
+| **Frontend**   | React 19 · TypeScript · TanStack Start (Router + Query) · Tailwind CSS v4 · shadcn/ui · Zustand |
+| **AI**         | OpenAI Responses API · Structured Outputs · Zod                                                 |
+| **Testing**    | Vitest (unit tests + gated evaluation tests)                                                    |
+| **Deployment** | Cloudflare (via Nitro)                                                                          |
+| **Tooling**    | npm · ESLint · Prettier                                                                         |
+
+---
+
+## Database
+
+Persistence is being built incrementally, one model at a time, against a Neon
+PostgreSQL database via Prisma 7. This diagram reflects the schema as it
+exists today — it will grow through Sprint 4 as `Member`, `Candidate`,
+`Interview`, and `Evidence` are added.
+
+```mermaid
+erDiagram
+    WORKSPACE {
+        string id PK
+        string name
+        string slug UK
+        datetime createdAt
+        datetime updatedAt
+    }
+```
+
+Database access is layered so routes never touch Prisma directly:
+
+```mermaid
+flowchart LR
+    Route[Route] --> ServiceLayer["src/services/"]
+    ServiceLayer --> Repo["src/db/repositories/"]
+    Repo --> Client["src/db/client.ts"]
+    Client --> Neon[(Neon PostgreSQL)]
+```
 
 ---
 
@@ -201,32 +233,32 @@ There's also an internal-only route, `/playground/evidence`, for exercising an e
 
 **✅ Complete**
 
-| Area | Detail |
-|---|---|
-| Evidence Extraction Engine | OpenAI Responses API, Structured Outputs, Zod-validated, unit + eval tested |
-| Evidence Gap Analysis Engine | Missing/partial detection, grounded to the interview's own competencies |
-| Adaptive Follow-up Engine | One grounded follow-up suggestion, never a list |
-| Reflection Check | Pure, model-free check of whether collected evidence looks complete |
-| Role Planner Engine | Job description → draft interview blueprint |
-| Shared AI architecture | Common client, validation, error handling, and prompt utilities across all engines |
-| Live Interview Workspace | Real-time evidence extraction, gap analysis, and follow-up suggestions against a live session |
-| Evaluation test suite | Real-API tests proving grounding, no invented capabilities, no false gaps |
+| Area                         | Detail                                                                                        |
+| ---------------------------- | --------------------------------------------------------------------------------------------- |
+| Evidence Extraction Engine   | OpenAI Responses API, Structured Outputs, Zod-validated, unit + eval tested                   |
+| Evidence Gap Analysis Engine | Missing/partial detection, grounded to the interview's own competencies                       |
+| Adaptive Follow-up Engine    | One grounded follow-up suggestion, never a list                                               |
+| Reflection Check             | Pure, model-free check of whether collected evidence looks complete                           |
+| Role Planner Engine          | Job description → draft interview blueprint                                                   |
+| Shared AI architecture       | Common client, validation, error handling, and prompt utilities across all engines            |
+| Live Interview Workspace     | Real-time evidence extraction, gap analysis, and follow-up suggestions against a live session |
+| Evaluation test suite        | Real-API tests proving grounding, no invented capabilities, no false gaps                     |
 
 **🚧 In progress**
 
-| Area | Detail |
-|---|---|
-| Evidence Report & Candidate Journey | UI complete; currently rendered with representative data ahead of the persistence layer |
+| Area                                  | Detail                                                                                               |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Evidence Report & Candidate Journey   | UI complete; currently rendered with representative data ahead of the persistence layer              |
 | Role Planner → Live Interview handoff | A blueprint's competencies and objectives don't yet carry into the interview session that follows it |
 
 **📅 Planned**
 
-| Area | Detail |
-|---|---|
-| Persistence | Candidates, interviews, and evidence backed by a real database instead of in-memory state |
-| Multi-candidate support | Running and resuming more than one interview |
-| Multi-interview rollup | Aggregating evidence from several interviewers into one candidate record |
-| Collaboration & enterprise readiness | Auth, workspaces, sharing, and the access model a team actually needs |
+| Area                                 | Detail                                                                                    |
+| ------------------------------------ | ----------------------------------------------------------------------------------------- |
+| Persistence                          | Candidates, interviews, and evidence backed by a real database instead of in-memory state |
+| Multi-candidate support              | Running and resuming more than one interview                                              |
+| Multi-interview rollup               | Aggregating evidence from several interviewers into one candidate record                  |
+| Collaboration & enterprise readiness | Auth, workspaces, sharing, and the access model a team actually needs                     |
 
 For how these planned items are sequenced, see [Roadmap](#roadmap) below.
 
@@ -235,6 +267,7 @@ For how these planned items are sequenced, see [Roadmap](#roadmap) below.
 ## Roadmap
 
 **Sprint 4**
+
 - Persistence layer
 - Database schema for Candidate, Interview, and Evidence
 - Candidate model
@@ -242,22 +275,26 @@ For how these planned items are sequenced, see [Roadmap](#roadmap) below.
 - Evidence persisted per interview, not held only in memory
 
 **Sprint 5**
+
 - Candidate Journey backed by real, persisted interview data
 - Evidence Reports backed by the same persistence layer
 - Real interviews — replacing the current single representative session
 
 **Sprint 6**
+
 - Multi-interview support per candidate
 - Human evidence review — editing or dismissing an AI-extracted item
 - Evidence editing, with the correction itself kept as part of the record
 
 **Phase 2**
+
 - Authentication
 - Workspaces
 - Collaboration between interviewers and hiring managers
 - Enterprise readiness: sharing, export, and access control
 
-**Phase 3** *(exploratory)*
+**Phase 3** _(exploratory)_
+
 - ATS integrations, led by real design partners rather than built speculatively
 - SSO, audit logging, and formal compliance groundwork
 
@@ -282,28 +319,31 @@ The full commitments — and where Potential's responsibility deliberately stops
 
 Every principle above is a decision this repository has made deliberately, and each one is written down in full — not just asserted here:
 
-| Document | What it covers |
-|---|---|
-| [`docs/north-star.md`](docs/north-star.md) | Why Potential exists, and what it will never become |
-| [`docs/manifesto.md`](docs/manifesto.md) | The case for evidence over scores |
-| [`docs/interview-philosophy.md`](docs/interview-philosophy.md) | What a good interview is actually for |
-| [`docs/product-principles.md`](docs/product-principles.md) | The principles every feature decision is checked against |
-| [`docs/ai-charter.md`](docs/ai-charter.md) | What the AI is for, and what it's never allowed to do |
-| [`docs/responsible-ai.md`](docs/responsible-ai.md) | The risk being designed against, and where responsibility sits |
-| [`docs/engineering-principles.md`](docs/engineering-principles.md) | How those principles translate into how we build |
+| Document                                                           | What it covers                                                 |
+| ------------------------------------------------------------------ | -------------------------------------------------------------- |
+| [`docs/north-star.md`](docs/north-star.md)                         | Why Potential exists, and what it will never become            |
+| [`docs/manifesto.md`](docs/manifesto.md)                           | The case for evidence over scores                              |
+| [`docs/interview-philosophy.md`](docs/interview-philosophy.md)     | What a good interview is actually for                          |
+| [`docs/product-principles.md`](docs/product-principles.md)         | The principles every feature decision is checked against       |
+| [`docs/ai-charter.md`](docs/ai-charter.md)                         | What the AI is for, and what it's never allowed to do          |
+| [`docs/responsible-ai.md`](docs/responsible-ai.md)                 | The risk being designed against, and where responsibility sits |
+| [`docs/engineering-principles.md`](docs/engineering-principles.md) | How those principles translate into how we build               |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md)                               | Setup, the PR checklist, and commit conventions                |
+| [`CHANGELOG.md`](CHANGELOG.md)                                     | Notable changes, release to release                            |
 
 ---
 
 ## Getting started
 
-Requires [Bun](https://bun.sh).
+Requires Node.js 22+ and npm.
 
 ```bash
-bun install
-bun dev
+npm install
+npm run dev
 ```
 
-The AI engines require an OpenAI API key. Create a `.env` file in the project root:
+The AI engines require an OpenAI API key, and persistence requires a Neon
+PostgreSQL connection string. Create a `.env` file in the project root:
 
 ```bash
 OPENAI_API_KEY=sk-...
@@ -313,6 +353,9 @@ OPENAI_EVIDENCE_MODEL=gpt-4o-mini
 OPENAI_GAP_ANALYSIS_MODEL=gpt-4o-mini
 OPENAI_FOLLOWUP_MODEL=gpt-4o-mini
 OPENAI_ROLE_PLANNER_MODEL=gpt-4o-mini
+
+# Neon PostgreSQL — use the direct (non-pooled) connection string locally
+DATABASE_URL=postgresql://user:password@host.neon.tech/dbname?sslmode=require
 ```
 
 ---
@@ -322,7 +365,7 @@ OPENAI_ROLE_PLANNER_MODEL=gpt-4o-mini
 Run the unit test suite (fast, no API key required):
 
 ```bash
-bun test
+npm test
 ```
 
 Run the evaluation suite for a specific engine against the real API (slower, requires `OPENAI_API_KEY`, non-deterministic by nature since it calls a live model):
@@ -332,14 +375,15 @@ OPENAI_API_KEY=sk-... npx vitest run noInference.eval
 OPENAI_API_KEY=sk-... npx vitest run gapDetection.eval
 ```
 
-Lint and format:
+Lint, typecheck, and format:
 
 ```bash
-bun run lint
-bun run format
+npm run lint
+npm run typecheck
+npm run format
 ```
 
-Contributions are welcome — a bug fix, a UI refinement, or a discussion about where the persistence layer or multi-interview support should go next. Before proposing a new AI capability, it's worth reading [`docs/ai-charter.md`](docs/ai-charter.md): the standard for whether something belongs in Potential is simple — does it help an interviewer collect better evidence, or does it start making the decision for them. If it's the second, it doesn't ship, regardless of how capable the underlying model gets.
+Contributions are welcome — a bug fix, a UI refinement, or a discussion about where the persistence layer or multi-interview support should go next. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for setup, the PR checklist, and commit conventions.
 
 See [Learn more](#learn-more) for the full set of product philosophy documents.
 
@@ -353,14 +397,20 @@ src/
                adaptive follow-up, and role planning. Each organized by capability,
                with shared plumbing in ai/shared/. See "AI architecture" above.
   components/  Reusable UI: shadcn primitives and Potential's own components.
+  db/          The one place Prisma is imported. client.ts holds the singleton
+               PrismaClient; repositories/ (in progress) wraps all queries so
+               routes and services never import Prisma directly.
   domain/      The shared type model — candidates, evidence, interviews, reports.
                Framework-agnostic; every other layer imports from here.
   lib/         Utilities and mock fixtures used ahead of a real backend.
   routes/      Application pages and layouts (file-based routing).
-  services/    The boundary between the UI and the AI layer. Wraps AI engines in
-               server-only functions; nothing above this layer touches OpenAI.
+  services/    The boundary between the UI and the AI/db layers. Wraps AI engines
+               and repositories in server-only functions; nothing above this
+               layer touches OpenAI or Prisma directly.
   stores/      Client-side state (Zustand) — interview transcript, evidence, and
                in-progress analysis.
+
+prisma/        Schema, migrations, and Prisma config — see "Database" above.
 
 docs/          The product's philosophy, written down rather than left implicit —
                see "Learn more" above for what each document covers.
