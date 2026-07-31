@@ -18,6 +18,7 @@ import { Route as AppInterviewsConsoleRouteImport } from './routes/app.interview
 import { Route as AppJourneyIdRouteImport } from './routes/app.journey.$id'
 import { Route as AppReportsIdRouteImport } from './routes/app.reports.$id'
 import { Route as AppRolesNewRouteImport } from './routes/app.roles.new'
+import { Route as AppReportsIdEvidenceRouteImport } from './routes/app.reports.$id.evidence'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -64,6 +65,11 @@ const AppRolesNewRoute = AppRolesNewRouteImport.update({
   path: '/roles/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReportsIdEvidenceRoute = AppReportsIdEvidenceRouteImport.update({
+  id: '/evidence',
+  path: '/evidence',
+  getParentRoute: () => AppReportsIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -73,8 +79,9 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/app/interviews/console': typeof AppInterviewsConsoleRoute
   '/app/journey/$id': typeof AppJourneyIdRoute
-  '/app/reports/$id': typeof AppReportsIdRoute
+  '/app/reports/$id': typeof AppReportsIdRouteWithChildren
   '/app/roles/new': typeof AppRolesNewRoute
+  '/app/reports/$id/evidence': typeof AppReportsIdEvidenceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -83,8 +90,9 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/app/interviews/console': typeof AppInterviewsConsoleRoute
   '/app/journey/$id': typeof AppJourneyIdRoute
-  '/app/reports/$id': typeof AppReportsIdRoute
+  '/app/reports/$id': typeof AppReportsIdRouteWithChildren
   '/app/roles/new': typeof AppRolesNewRoute
+  '/app/reports/$id/evidence': typeof AppReportsIdEvidenceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -95,8 +103,9 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/app/interviews/console': typeof AppInterviewsConsoleRoute
   '/app/journey/$id': typeof AppJourneyIdRoute
-  '/app/reports/$id': typeof AppReportsIdRoute
+  '/app/reports/$id': typeof AppReportsIdRouteWithChildren
   '/app/roles/new': typeof AppRolesNewRoute
+  '/app/reports/$id/evidence': typeof AppReportsIdEvidenceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/app/journey/$id'
     | '/app/reports/$id'
     | '/app/roles/new'
+    | '/app/reports/$id/evidence'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/app/journey/$id'
     | '/app/reports/$id'
     | '/app/roles/new'
+    | '/app/reports/$id/evidence'
   id:
     | '__root__'
     | '/'
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/app/journey/$id'
     | '/app/reports/$id'
     | '/app/roles/new'
+    | '/app/reports/$id/evidence'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -205,14 +217,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRolesNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/reports/$id/evidence': {
+      id: '/app/reports/$id/evidence'
+      path: '/evidence'
+      fullPath: '/app/reports/$id/evidence'
+      preLoaderRoute: typeof AppReportsIdEvidenceRouteImport
+      parentRoute: typeof AppReportsIdRoute
+    }
   }
 }
+
+interface AppReportsIdRouteChildren {
+  AppReportsIdEvidenceRoute: typeof AppReportsIdEvidenceRoute
+}
+
+const AppReportsIdRouteChildren: AppReportsIdRouteChildren = {
+  AppReportsIdEvidenceRoute: AppReportsIdEvidenceRoute,
+}
+
+const AppReportsIdRouteWithChildren = AppReportsIdRoute._addFileChildren(
+  AppReportsIdRouteChildren,
+)
 
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppInterviewsConsoleRoute: typeof AppInterviewsConsoleRoute
   AppJourneyIdRoute: typeof AppJourneyIdRoute
-  AppReportsIdRoute: typeof AppReportsIdRoute
+  AppReportsIdRoute: typeof AppReportsIdRouteWithChildren
   AppRolesNewRoute: typeof AppRolesNewRoute
 }
 
@@ -220,7 +251,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppInterviewsConsoleRoute: AppInterviewsConsoleRoute,
   AppJourneyIdRoute: AppJourneyIdRoute,
-  AppReportsIdRoute: AppReportsIdRoute,
+  AppReportsIdRoute: AppReportsIdRouteWithChildren,
   AppRolesNewRoute: AppRolesNewRoute,
 }
 

@@ -4,6 +4,7 @@ import type {
   EvidenceGapAnalysis,
   FollowUpSuggestion,
   InterviewReflection,
+  InterviewTurn,
   TranscriptLine,
 } from "@/domain";
 import { TRANSCRIPT } from "@/lib/mock/interviews";
@@ -23,8 +24,17 @@ export interface SubmitResponseInput {
 interface InterviewState {
   transcript: TranscriptLine[];
   evidence: Evidence[];
+  /**
+   * Per-question-turn record of what was asked, what was said, and the
+   * evidence that turn produced — kept alongside the flat `evidence` list
+   * above (unchanged, still used by the console UI) so the Explainable
+   * Evidence Report can trace every quote back to its originating turn.
+   */
+  turns: InterviewTurn[];
   gapAnalysis: EvidenceGapAnalysis | null;
   followUpSuggestion: FollowUpSuggestion | null;
+  /** Every follow-up suggested this interview, in order — `followUpSuggestion` above only ever holds the latest. */
+  followUpHistory: FollowUpSuggestion[];
   /** Set only when the interviewer chooses to finish the interview; cleared once acted on. */
   reflection: InterviewReflection | null;
   isAnalysing: boolean;
@@ -43,15 +53,18 @@ function currentClockTime(): string {
 export const useInterviewStore = create<InterviewState>((set, get) => ({
   transcript: TRANSCRIPT,
   evidence: [],
+  turns: [],
   gapAnalysis: null,
   followUpSuggestion: null,
+  followUpHistory: [],
   reflection: null,
   isAnalysing: false,
   error: null,
 
   submitResponse: async ({ question, response, competencies, objectives }) => {
+    const t = currentClockTime();
     set((state) => ({
-      transcript: [...state.transcript, { speaker: "Alex", text: response, t: currentClockTime() }],
+      transcript: [...state.transcript, { speaker: "Alex", text: response, t }],
       isAnalysing: true,
       error: null,
     }));
@@ -64,7 +77,13 @@ export const useInterviewStore = create<InterviewState>((set, get) => ({
         competencies,
       });
       updatedEvidence = [...get().evidence, ...newEvidence];
-      set({ evidence: updatedEvidence });
+      set((state) => ({
+        evidence: updatedEvidence,
+        turns: [
+          ...state.turns,
+          { turnIndex: state.turns.length, question, response, t, evidence: newEvidence },
+        ],
+      }));
     } catch (error) {
       set({
         isAnalysing: false,
@@ -99,7 +118,11 @@ export const useInterviewStore = create<InterviewState>((set, get) => ({
         evidence: updatedEvidence,
         gapAnalysis,
       });
-      set({ followUpSuggestion, isAnalysing: false });
+      set((state) => ({
+        followUpSuggestion,
+        followUpHistory: [...state.followUpHistory, followUpSuggestion],
+        isAnalysing: false,
+      }));
     } catch (error) {
       set({
         isAnalysing: false,
