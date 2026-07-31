@@ -1,12 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import type { InterviewBlueprint } from "@/domain";
-import { analyzeRole as analyzeRoleWithAI, createOpenAIRolePlannerClient } from "@/ai/role-planner";
+import { roleRepository } from "@/db/repositories/roleRepository";
+import type { Role } from "@/generated/prisma/client";
 
 /**
- * Thrown by the service layer whenever the Role Planner can't be reached or
- * refuses a request — components only ever need to handle this one type,
- * regardless of what actually went wrong underneath (network, OpenAI, schema).
+ * Thrown by the service layer whenever a role operation fails — components
+ * only ever need to handle this one type, regardless of what went wrong
+ * underneath (validation, a missing workspace, a DB outage).
  */
 export class RoleServiceError extends Error {
   constructor(message: string, cause?: unknown) {
@@ -15,41 +15,97 @@ export class RoleServiceError extends Error {
   }
 }
 
-const analyzeRoleInputSchema = z.object({
-  jobDescription: z.string().min(1),
+const employmentTypeSchema = z.enum(["FULL_TIME", "PART_TIME", "CONTRACT", "INTERN"]);
+const roleStatusSchema = z.enum(["DRAFT", "OPEN", "CLOSED", "ARCHIVED"]);
+
+const createRoleInputSchema = z.object({
+  workspaceId: z.string().min(1),
+  title: z.string().min(1),
+  department: z.string().min(1).optional(),
+  employmentType: employmentTypeSchema.optional(),
 });
 
-export type AnalyzeRoleInput = z.infer<typeof analyzeRoleInputSchema>;
+export type CreateRoleInput = z.infer<typeof createRoleInputSchema>;
 
 /**
  * Runs on the server only (compiled away from the client bundle by TanStack
- * Start): this is the one place the OpenAI client and API key exist, so the
- * Role Planner — and the credentials it needs — are never shipped to the browser.
+ * Start): this is the one place Prisma is reachable from a service, so the DB
+ * connection is never shipped to the browser.
  */
-const analyzeRoleServerFn = createServerFn({ method: "POST" })
-  .validator(analyzeRoleInputSchema)
-  .handler(async ({ data }): Promise<InterviewBlueprint> => {
+const createRoleServerFn = createServerFn({ method: "POST" })
+  .validator(createRoleInputSchema)
+  .handler(async ({ data }): Promise<Role> => {
     try {
-      const client = createOpenAIRolePlannerClient();
-      return await analyzeRoleWithAI(data, client);
+      return await roleRepository.create(data);
     } catch (error) {
-      throw new RoleServiceError("Potential couldn't analyse that job description.", error);
+      throw new RoleServiceError("Potential couldn't create that role.", error);
     }
   });
 
 /**
- * The only entry point React components should use to reach the Role Planner —
- * never call analyzeRole() from @/ai/role-planner directly from UI code.
+ * The only entry point React components should use to create a role — never
+ * call roleRepository directly from UI code.
  */
-async function analyzeRole(input: AnalyzeRoleInput): Promise<InterviewBlueprint> {
+async function createRole(input: CreateRoleInput): Promise<Role> {
   try {
-    return await analyzeRoleServerFn({ data: input });
+    return await createRoleServerFn({ data: input });
   } catch (error) {
     if (error instanceof RoleServiceError) throw error;
-    throw new RoleServiceError("Potential couldn't analyse that job description.", error);
+    throw new RoleServiceError("Potential couldn't create that role.", error);
+  }
+}
+
+const listRolesInputSchema = z.object({ workspaceId: z.string().min(1) });
+
+export type ListRolesInput = z.infer<typeof listRolesInputSchema>;
+
+const listRolesServerFn = createServerFn({ method: "POST" })
+  .validator(listRolesInputSchema)
+  .handler(async ({ data }): Promise<Role[]> => {
+    try {
+      return await roleRepository.findByWorkspace(data.workspaceId);
+    } catch (error) {
+      throw new RoleServiceError("Potential couldn't load that workspace's roles.", error);
+    }
+  });
+
+async function listRoles(input: ListRolesInput): Promise<Role[]> {
+  try {
+    return await listRolesServerFn({ data: input });
+  } catch (error) {
+    if (error instanceof RoleServiceError) throw error;
+    throw new RoleServiceError("Potential couldn't load that workspace's roles.", error);
+  }
+}
+
+const updateRoleStatusInputSchema = z.object({
+  roleId: z.string().min(1),
+  status: roleStatusSchema,
+});
+
+export type UpdateRoleStatusInput = z.infer<typeof updateRoleStatusInputSchema>;
+
+const updateRoleStatusServerFn = createServerFn({ method: "POST" })
+  .validator(updateRoleStatusInputSchema)
+  .handler(async ({ data }): Promise<Role> => {
+    try {
+      return await roleRepository.updateStatus(data.roleId, data.status);
+    } catch (error) {
+      throw new RoleServiceError("Potential couldn't update that role's status.", error);
+    }
+  });
+
+async function updateRoleStatus(input: UpdateRoleStatusInput): Promise<Role> {
+  try {
+    return await updateRoleStatusServerFn({ data: input });
+  } catch (error) {
+    if (error instanceof RoleServiceError) throw error;
+    throw new RoleServiceError("Potential couldn't update that role's status.", error);
   }
 }
 
 export const roleService = {
-  analyzeRole,
+  createRole,
+  listRoles,
+  updateRoleStatus,
 };

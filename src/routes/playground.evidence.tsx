@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { Evidence, EvidenceGap } from "@/domain";
-import { interviewService } from "@/services/interviewService";
+import { interviewAiService } from "@/services/interviewAiService";
 
 export const Route = createFileRoute("/playground/evidence")({
   component: EvidencePlayground,
@@ -57,7 +57,7 @@ function EvidencePlayground() {
     setGaps(null);
     setGapsError(null);
     try {
-      const result = await interviewService.analyseResponse({
+      const result = await interviewAiService.analyseResponse({
         question: question.trim(),
         response: response.trim(),
         competencies,
@@ -76,7 +76,7 @@ function EvidencePlayground() {
     setIsAnalyzingGaps(true);
     setGapsError(null);
     try {
-      const result = await interviewService.analyzeGaps({
+      const result = await interviewAiService.analyzeGaps({
         competencies,
         objectives,
         evidence,

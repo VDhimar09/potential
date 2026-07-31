@@ -18,4 +18,127 @@ model Workspace {
   slug      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  members    WorkspaceMember[]
+  roles      Role[]
+  candidates Candidate[]
+  interviews Interview[]
+}
+
+enum WorkspaceMemberRole {
+  OWNER
+  ADMIN
+  INTERVIEWER
+}
+
+model WorkspaceMember {
+  id          String              @id @default(cuid())
+  workspaceId String
+  workspace   Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  email       String
+  role        WorkspaceMemberRole @default(INTERVIEWER)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@unique([workspaceId, email])
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERN
+}
+
+enum RoleStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+/// A job opening a workspace is hiring for. This is the persisted anchor that
+/// Interview, Candidate, Transcript, and Evidence will attach to in later
+/// sprints — deliberately thin until those consumers exist.
+model Role {
+  id             String         @id @default(cuid())
+  workspaceId    String
+  workspace      Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  title          String
+  department     String?
+  employmentType EmploymentType @default(FULL_TIME)
+  status         RoleStatus     @default(DRAFT)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  interviews Interview[]
+
+  @@index([workspaceId])
+}
+
+enum CandidateStatus {
+  NEW
+  SCREENING
+  INTERVIEWING
+  OFFERED
+  HIRED
+  WITHDRAWN
+  REJECTED
+}
+
+/// A person being considered for one or more roles at a workspace. Deliberately
+/// not linked to a specific Role yet — that association (and Interview,
+/// Transcript, Evidence, Reflection, Reports) is later-sprint work.
+model Candidate {
+  id          String          @id @default(cuid())
+  workspaceId String
+  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  firstName   String
+  lastName    String
+  email       String
+  phone       String?
+  linkedinUrl String?
+  resumeUrl   String?
+  notes       String?
+  status      CandidateStatus @default(NEW)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  interviews Interview[]
+
+  @@index([workspaceId])
+}
+
+enum InterviewStatus {
+  DRAFT
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  REVIEWED
+  ARCHIVED
+}
+
+/// A single interview session pairing a Candidate with a Role at a Workspace.
+/// Deliberately holds only scheduling/status data — Transcript, Evidence,
+/// EvidenceGap, Reflection, EvidenceReport, and InterviewParticipant all
+/// attach to this later without requiring changes here.
+model Interview {
+  id          String          @id @default(cuid())
+  workspaceId String
+  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  roleId      String
+  role        Role            @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  candidateId String
+  candidate   Candidate       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  status      InterviewStatus @default(DRAFT)
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([workspaceId])
+  @@index([roleId])
+  @@index([candidateId])
 }

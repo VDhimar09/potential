@@ -8,7 +8,7 @@ import type {
 } from "@/domain";
 import { TRANSCRIPT } from "@/lib/mock/interviews";
 import { evaluateInterviewReflection } from "@/lib/reflectionCheck";
-import { interviewService } from "@/services/interviewService";
+import { interviewAiService } from "@/services/interviewAiService";
 
 export interface SubmitResponseInput {
   /** The interviewer's question this response answers. */
@@ -58,7 +58,7 @@ export const useInterviewStore = create<InterviewState>((set, get) => ({
 
     let updatedEvidence: Evidence[];
     try {
-      const newEvidence = await interviewService.analyseResponse({
+      const newEvidence = await interviewAiService.analyseResponse({
         question,
         response,
         competencies,
@@ -77,7 +77,7 @@ export const useInterviewStore = create<InterviewState>((set, get) => ({
     // gap-analysis error never discards the evidence the interviewer just got.
     let gapAnalysis: EvidenceGapAnalysis;
     try {
-      gapAnalysis = await interviewService.analyzeGaps({
+      gapAnalysis = await interviewAiService.analyzeGaps({
         competencies,
         objectives,
         evidence: updatedEvidence,
@@ -94,7 +94,7 @@ export const useInterviewStore = create<InterviewState>((set, get) => ({
     // Likewise, evidence and gap analysis stay put even if the follow-up
     // suggestion below fails — only the last stage is allowed to fail silently.
     try {
-      const followUpSuggestion = await interviewService.generateFollowUp({
+      const followUpSuggestion = await interviewAiService.generateFollowUp({
         latestResponse: response,
         evidence: updatedEvidence,
         gapAnalysis,

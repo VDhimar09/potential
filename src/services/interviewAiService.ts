@@ -1,0 +1,164 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import type { Evidence, EvidenceGapAnalysis, FollowUpSuggestion } from "@/domain";
+import { createOpenAIEvidenceClient, extractEvidence } from "@/ai/evidence";
+import { analyzeEvidenceGaps, createOpenAIGapAnalysisClient } from "@/ai/gaps";
+import { analyzeFollowUp, createOpenAIFollowUpClient } from "@/ai/followups";
+
+/**
+ * Thrown by the service layer whenever the Evidence Engine can't be reached or
+ * refuses a request — components/stores only ever need to handle this one type,
+ * regardless of what actually went wrong underneath (network, OpenAI, schema).
+ */
+export class InterviewAiServiceError extends Error {
+  constructor(message: string, cause?: unknown) {
+    super(message, cause !== undefined ? { cause } : undefined);
+    this.name = "InterviewAiServiceError";
+  }
+}
+
+const analyseResponseInputSchema = z.object({
+  question: z.string().min(1),
+  response: z.string().min(1),
+  competencies: z.array(z.string().min(1)).min(1),
+});
+
+// The JSON-serializable shape that actually crosses the client/server boundary —
+// deliberately its own type (not ai/evidence's ExtractEvidenceInput, which uses a
+// readonly array) since that's a stricter, unrelated internal contract.
+export type AnalyseResponseInput = z.infer<typeof analyseResponseInputSchema>;
+
+/**
+ * Runs on the server only (compiled away from the client bundle by TanStack
+ * Start): this is the one place the OpenAI client and API key exist, so the
+ * Evidence Engine — and the credentials it needs — are never shipped to the
+ * browser.
+ */
+const analyseResponseServerFn = createServerFn({ method: "POST" })
+  .validator(analyseResponseInputSchema)
+  .handler(async ({ data }): Promise<Evidence[]> => {
+    try {
+      const client = createOpenAIEvidenceClient();
+      const result = await extractEvidence(data, client);
+      return result.evidence;
+    } catch (error) {
+      throw new InterviewAiServiceError("Potential couldn't analyse that response.", error);
+    }
+  });
+
+/**
+ * The only entry point React components (or the interview store) should use to
+ * reach the Evidence Engine — never call extractEvidence() directly from UI code.
+ */
+async function analyseResponse(input: AnalyseResponseInput): Promise<Evidence[]> {
+  try {
+    return await analyseResponseServerFn({ data: input });
+  } catch (error) {
+    if (error instanceof InterviewAiServiceError) throw error;
+    throw new InterviewAiServiceError("Potential couldn't analyse that response.", error);
+  }
+}
+
+const analyzeGapsInputSchema = z.object({
+  competencies: z.array(z.string().min(1)).min(1),
+  objectives: z.array(z.string().min(1)).min(1),
+  evidence: z.array(
+    z.object({
+      competency: z.string().min(1),
+      quote: z.string().min(1),
+      reasoning: z.string().min(1),
+      strength: z.enum(["strong", "moderate", "weak"]),
+    }),
+  ),
+});
+
+export type AnalyzeGapsInput = z.infer<typeof analyzeGapsInputSchema>;
+
+/**
+ * Runs on the server only, for the same reason analyseResponseServerFn does: the
+ * Gap Analysis Engine's OpenAI client and API key must never reach the browser.
+ */
+const analyzeGapsServerFn = createServerFn({ method: "POST" })
+  .validator(analyzeGapsInputSchema)
+  .handler(async ({ data }): Promise<EvidenceGapAnalysis> => {
+    try {
+      const client = createOpenAIGapAnalysisClient();
+      return await analyzeEvidenceGaps(data, client);
+    } catch (error) {
+      throw new InterviewAiServiceError("Potential couldn't analyse evidence gaps.", error);
+    }
+  });
+
+/**
+ * The only entry point React components (or the interview store) should use to
+ * reach the Gap Analysis Engine — never call analyzeEvidenceGaps() directly from
+ * UI code.
+ */
+async function analyzeGaps(input: AnalyzeGapsInput): Promise<EvidenceGapAnalysis> {
+  try {
+    return await analyzeGapsServerFn({ data: input });
+  } catch (error) {
+    if (error instanceof InterviewAiServiceError) throw error;
+    throw new InterviewAiServiceError("Potential couldn't analyse evidence gaps.", error);
+  }
+}
+
+const generateFollowUpInputSchema = z.object({
+  latestResponse: z.string().min(1),
+  evidence: z.array(
+    z.object({
+      competency: z.string().min(1),
+      quote: z.string().min(1),
+      reasoning: z.string().min(1),
+      strength: z.enum(["strong", "moderate", "weak"]),
+    }),
+  ),
+  gapAnalysis: z.object({
+    summary: z.string().min(1),
+    coveredCompetencies: z.array(z.string().min(1)),
+    missingCompetencies: z.array(
+      z.object({ competency: z.string().min(1), explanation: z.string().min(1) }),
+    ),
+    completedObjectives: z.array(z.string().min(1)),
+    incompleteObjectives: z.array(
+      z.object({ objective: z.string().min(1), explanation: z.string().min(1) }),
+    ),
+  }),
+});
+
+export type GenerateFollowUpInput = z.infer<typeof generateFollowUpInputSchema>;
+
+/**
+ * Runs on the server only, for the same reason the other server functions in this
+ * file do: the Follow-up Engine's OpenAI client and API key must never reach the
+ * browser.
+ */
+const generateFollowUpServerFn = createServerFn({ method: "POST" })
+  .validator(generateFollowUpInputSchema)
+  .handler(async ({ data }): Promise<FollowUpSuggestion> => {
+    try {
+      const client = createOpenAIFollowUpClient();
+      return await analyzeFollowUp(data, client);
+    } catch (error) {
+      throw new InterviewAiServiceError("Potential couldn't suggest a follow-up question.", error);
+    }
+  });
+
+/**
+ * The only entry point React components (or the interview store) should use to
+ * reach the Follow-up Engine — never call analyzeFollowUp() directly from UI code.
+ */
+async function generateFollowUp(input: GenerateFollowUpInput): Promise<FollowUpSuggestion> {
+  try {
+    return await generateFollowUpServerFn({ data: input });
+  } catch (error) {
+    if (error instanceof InterviewAiServiceError) throw error;
+    throw new InterviewAiServiceError("Potential couldn't suggest a follow-up question.", error);
+  }
+}
+
+export const interviewAiService = {
+  analyseResponse,
+  analyzeGaps,
+  generateFollowUp,
+};

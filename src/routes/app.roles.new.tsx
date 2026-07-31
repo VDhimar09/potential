@@ -5,7 +5,7 @@ import { ArrowLeft, Sparkles, Upload, Check, Plus, X, ArrowRight } from "lucide-
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { InterviewBlueprint } from "@/domain";
-import { roleService } from "@/services/roleService";
+import { rolePlannerService } from "@/services/rolePlannerService";
 import {
   SUGGESTED_COMPETENCIES,
   DEFAULT_COMPETENCIES,
@@ -45,7 +45,7 @@ function CreateRole() {
 
     setIsAnalyzing(true);
     try {
-      const result = await roleService.analyzeRole({ jobDescription });
+      const result = await rolePlannerService.analyzeRole({ jobDescription });
       setBlueprint(result);
       setTitle(result.roleTitle);
       setRoleSummary(result.roleSummary);

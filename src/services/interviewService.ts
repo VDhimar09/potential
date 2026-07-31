@@ -1,14 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import type { Evidence, EvidenceGapAnalysis, FollowUpSuggestion } from "@/domain";
-import { createOpenAIEvidenceClient, extractEvidence } from "@/ai/evidence";
-import { analyzeEvidenceGaps, createOpenAIGapAnalysisClient } from "@/ai/gaps";
-import { analyzeFollowUp, createOpenAIFollowUpClient } from "@/ai/followups";
+import { interviewRepository } from "@/db/repositories/interviewRepository";
+import type { Interview } from "@/generated/prisma/client";
 
 /**
- * Thrown by the service layer whenever the Evidence Engine can't be reached or
- * refuses a request — components/stores only ever need to handle this one type,
- * regardless of what actually went wrong underneath (network, OpenAI, schema).
+ * Thrown by the service layer whenever an interview operation fails —
+ * components only ever need to handle this one type, regardless of what went
+ * wrong underneath (validation, a missing role/candidate, a DB outage).
  */
 export class InterviewServiceError extends Error {
   constructor(message: string, cause?: unknown) {
@@ -17,148 +15,106 @@ export class InterviewServiceError extends Error {
   }
 }
 
-const analyseResponseInputSchema = z.object({
-  question: z.string().min(1),
-  response: z.string().min(1),
-  competencies: z.array(z.string().min(1)).min(1),
+const interviewStatusSchema = z.enum([
+  "DRAFT",
+  "SCHEDULED",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "REVIEWED",
+  "ARCHIVED",
+]);
+
+const createInterviewInputSchema = z.object({
+  workspaceId: z.string().min(1),
+  roleId: z.string().min(1),
+  candidateId: z.string().min(1),
+  scheduledAt: z.coerce.date().optional(),
 });
 
-// The JSON-serializable shape that actually crosses the client/server boundary —
-// deliberately its own type (not ai/evidence's ExtractEvidenceInput, which uses a
-// readonly array) since that's a stricter, unrelated internal contract.
-export type AnalyseResponseInput = z.infer<typeof analyseResponseInputSchema>;
+export type CreateInterviewInput = z.infer<typeof createInterviewInputSchema>;
 
 /**
  * Runs on the server only (compiled away from the client bundle by TanStack
- * Start): this is the one place the OpenAI client and API key exist, so the
- * Evidence Engine — and the credentials it needs — are never shipped to the
- * browser.
+ * Start): this is the one place Prisma is reachable from a service, so the DB
+ * connection is never shipped to the browser.
  */
-const analyseResponseServerFn = createServerFn({ method: "POST" })
-  .validator(analyseResponseInputSchema)
-  .handler(async ({ data }): Promise<Evidence[]> => {
+const createInterviewServerFn = createServerFn({ method: "POST" })
+  .validator(createInterviewInputSchema)
+  .handler(async ({ data }): Promise<Interview> => {
     try {
-      const client = createOpenAIEvidenceClient();
-      const result = await extractEvidence(data, client);
-      return result.evidence;
+      return await interviewRepository.create(data);
     } catch (error) {
-      throw new InterviewServiceError("Potential couldn't analyse that response.", error);
+      throw new InterviewServiceError("Potential couldn't create that interview.", error);
     }
   });
 
 /**
- * The only entry point React components (or the interview store) should use to
- * reach the Evidence Engine — never call extractEvidence() directly from UI code.
+ * The only entry point React components should use to create an interview —
+ * never call interviewRepository directly from UI code.
  */
-async function analyseResponse(input: AnalyseResponseInput): Promise<Evidence[]> {
+async function createInterview(input: CreateInterviewInput): Promise<Interview> {
   try {
-    return await analyseResponseServerFn({ data: input });
+    return await createInterviewServerFn({ data: input });
   } catch (error) {
     if (error instanceof InterviewServiceError) throw error;
-    throw new InterviewServiceError("Potential couldn't analyse that response.", error);
+    throw new InterviewServiceError("Potential couldn't create that interview.", error);
   }
 }
 
-const analyzeGapsInputSchema = z.object({
-  competencies: z.array(z.string().min(1)).min(1),
-  objectives: z.array(z.string().min(1)).min(1),
-  evidence: z.array(
-    z.object({
-      competency: z.string().min(1),
-      quote: z.string().min(1),
-      reasoning: z.string().min(1),
-      strength: z.enum(["strong", "moderate", "weak"]),
-    }),
-  ),
-});
+const listInterviewsInputSchema = z.object({ workspaceId: z.string().min(1) });
 
-export type AnalyzeGapsInput = z.infer<typeof analyzeGapsInputSchema>;
+export type ListInterviewsInput = z.infer<typeof listInterviewsInputSchema>;
 
-/**
- * Runs on the server only, for the same reason analyseResponseServerFn does: the
- * Gap Analysis Engine's OpenAI client and API key must never reach the browser.
- */
-const analyzeGapsServerFn = createServerFn({ method: "POST" })
-  .validator(analyzeGapsInputSchema)
-  .handler(async ({ data }): Promise<EvidenceGapAnalysis> => {
+const listInterviewsServerFn = createServerFn({ method: "POST" })
+  .validator(listInterviewsInputSchema)
+  .handler(async ({ data }): Promise<Interview[]> => {
     try {
-      const client = createOpenAIGapAnalysisClient();
-      return await analyzeEvidenceGaps(data, client);
+      return await interviewRepository.findByWorkspace(data.workspaceId);
     } catch (error) {
-      throw new InterviewServiceError("Potential couldn't analyse evidence gaps.", error);
+      throw new InterviewServiceError(
+        "Potential couldn't load that workspace's interviews.",
+        error,
+      );
     }
   });
 
-/**
- * The only entry point React components (or the interview store) should use to
- * reach the Gap Analysis Engine — never call analyzeEvidenceGaps() directly from
- * UI code.
- */
-async function analyzeGaps(input: AnalyzeGapsInput): Promise<EvidenceGapAnalysis> {
+async function listInterviews(input: ListInterviewsInput): Promise<Interview[]> {
   try {
-    return await analyzeGapsServerFn({ data: input });
+    return await listInterviewsServerFn({ data: input });
   } catch (error) {
     if (error instanceof InterviewServiceError) throw error;
-    throw new InterviewServiceError("Potential couldn't analyse evidence gaps.", error);
+    throw new InterviewServiceError("Potential couldn't load that workspace's interviews.", error);
   }
 }
 
-const generateFollowUpInputSchema = z.object({
-  latestResponse: z.string().min(1),
-  evidence: z.array(
-    z.object({
-      competency: z.string().min(1),
-      quote: z.string().min(1),
-      reasoning: z.string().min(1),
-      strength: z.enum(["strong", "moderate", "weak"]),
-    }),
-  ),
-  gapAnalysis: z.object({
-    summary: z.string().min(1),
-    coveredCompetencies: z.array(z.string().min(1)),
-    missingCompetencies: z.array(
-      z.object({ competency: z.string().min(1), explanation: z.string().min(1) }),
-    ),
-    completedObjectives: z.array(z.string().min(1)),
-    incompleteObjectives: z.array(
-      z.object({ objective: z.string().min(1), explanation: z.string().min(1) }),
-    ),
-  }),
+const updateInterviewStatusInputSchema = z.object({
+  interviewId: z.string().min(1),
+  status: interviewStatusSchema,
 });
 
-export type GenerateFollowUpInput = z.infer<typeof generateFollowUpInputSchema>;
+export type UpdateInterviewStatusInput = z.infer<typeof updateInterviewStatusInputSchema>;
 
-/**
- * Runs on the server only, for the same reason the other server functions in this
- * file do: the Follow-up Engine's OpenAI client and API key must never reach the
- * browser.
- */
-const generateFollowUpServerFn = createServerFn({ method: "POST" })
-  .validator(generateFollowUpInputSchema)
-  .handler(async ({ data }): Promise<FollowUpSuggestion> => {
+const updateInterviewStatusServerFn = createServerFn({ method: "POST" })
+  .validator(updateInterviewStatusInputSchema)
+  .handler(async ({ data }): Promise<Interview> => {
     try {
-      const client = createOpenAIFollowUpClient();
-      return await analyzeFollowUp(data, client);
+      return await interviewRepository.updateStatus(data.interviewId, data.status);
     } catch (error) {
-      throw new InterviewServiceError("Potential couldn't suggest a follow-up question.", error);
+      throw new InterviewServiceError("Potential couldn't update that interview's status.", error);
     }
   });
 
-/**
- * The only entry point React components (or the interview store) should use to
- * reach the Follow-up Engine — never call analyzeFollowUp() directly from UI code.
- */
-async function generateFollowUp(input: GenerateFollowUpInput): Promise<FollowUpSuggestion> {
+async function updateInterviewStatus(input: UpdateInterviewStatusInput): Promise<Interview> {
   try {
-    return await generateFollowUpServerFn({ data: input });
+    return await updateInterviewStatusServerFn({ data: input });
   } catch (error) {
     if (error instanceof InterviewServiceError) throw error;
-    throw new InterviewServiceError("Potential couldn't suggest a follow-up question.", error);
+    throw new InterviewServiceError("Potential couldn't update that interview's status.", error);
   }
 }
 
 export const interviewService = {
-  analyseResponse,
-  analyzeGaps,
-  generateFollowUp,
+  createInterview,
+  listInterviews,
+  updateInterviewStatus,
 };
