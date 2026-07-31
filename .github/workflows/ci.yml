@@ -20,8 +20,13 @@ jobs:
       - run: npm ci
 
       # Prisma Client is generated from the schema only — no live database
-      # connection needed, so this is safe to run without secrets.
+      # connection needed, so this is safe to run without secrets. A
+      # placeholder DATABASE_URL is still required: prisma.config.ts resolves
+      # it eagerly via env(), which throws if the variable is unset, even
+      # though `generate` never connects to it.
       - run: npx prisma generate
+        env:
+          DATABASE_URL: "postgresql://user:password@localhost:5432/db"
 
       - run: npm run lint
       - run: npm run typecheck
