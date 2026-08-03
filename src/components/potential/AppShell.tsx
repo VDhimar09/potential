@@ -1,43 +1,20 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import {
-  Home,
-  Briefcase,
-  MessageSquare,
-  FileText,
-  Route as RouteIcon,
-  Command,
-  Plus,
-} from "lucide-react";
+import { Home, Briefcase, Users, MessageSquare, FileText, Command } from "lucide-react";
 import { Logo } from "@/components/potential/Logo";
 import { ThemeToggle } from "@/components/potential/ThemeToggle";
 import { cn } from "@/lib/utils";
-import { SIDEBAR_RECENT as RECENT } from "@/lib/mock/navigation";
+import type { Candidate } from "@/generated/prisma/client";
 
 const NAV: Array<{ to: string; label: string; icon: typeof Home; color: string; exact?: boolean }> =
   [
-    { to: "/app", label: "Home", icon: Home, color: "text-brand", exact: true },
-    { to: "/app/roles/new", label: "New role", icon: Plus, color: "text-violet" },
-    {
-      to: "/app/interviews/console",
-      label: "Live interview",
-      icon: MessageSquare,
-      color: "text-sky",
-    },
-    {
-      to: "/app/reports/alex-morgan",
-      label: "Evidence report",
-      icon: FileText,
-      color: "text-emerald",
-    },
-    {
-      to: "/app/journey/alex-morgan",
-      label: "Candidate journey",
-      icon: RouteIcon,
-      color: "text-purple",
-    },
+    { to: "/app", label: "Dashboard", icon: Home, color: "text-brand", exact: true },
+    { to: "/app/roles", label: "Roles", icon: Briefcase, color: "text-violet" },
+    { to: "/app/candidates", label: "Candidates", icon: Users, color: "text-sky" },
+    { to: "/app/interviews", label: "Interviews", icon: MessageSquare, color: "text-purple" },
+    { to: "/app/reports", label: "Evidence Reports", icon: FileText, color: "text-emerald" },
   ];
 
-export function AppShell() {
+export function AppShell({ recentCandidates }: { recentCandidates: Candidate[] }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
@@ -89,18 +66,25 @@ export function AppShell() {
 
           <div className="mt-6 px-2">
             <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/70">
-              Recent
+              Recent candidates
             </div>
             <div className="mt-2 space-y-0.5">
-              {RECENT.map((r) => (
-                <Link
-                  key={r.label}
-                  to={r.to}
-                  className="block truncate rounded-md px-2 py-1.5 text-[13px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
-                >
-                  {r.label}
-                </Link>
-              ))}
+              {recentCandidates.length > 0 ? (
+                recentCandidates.map((c) => (
+                  <Link
+                    key={c.id}
+                    to="/app/candidates/$id"
+                    params={{ id: c.id }}
+                    className="block truncate rounded-md px-2 py-1.5 text-[13px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
+                  >
+                    {c.firstName} {c.lastName}
+                  </Link>
+                ))
+              ) : (
+                <p className="px-2 py-1.5 text-[13px] text-muted-foreground/70">
+                  No candidates yet
+                </p>
+              )}
             </div>
           </div>
 

@@ -10,6 +10,3 @@ export * from "./report";
 export * from "./evidenceReport";
 export * from "./evidenceReview";
 export * from "./journey";
-export * from "./role";
-export * from "./activity";
-export * from "./navigation";

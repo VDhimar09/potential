@@ -16,6 +16,38 @@ export class WorkspaceServiceError extends Error {
   }
 }
 
+/**
+ * There's no auth/session layer yet, so every visitor shares one workspace.
+ * Idempotent: looks up the fixed "default" slug and creates it on first run.
+ * Replace with real workspace resolution once accounts exist.
+ */
+const DEFAULT_WORKSPACE_SLUG = "default";
+const DEFAULT_WORKSPACE_NAME = "Default Workspace";
+
+const getOrCreateDefaultWorkspaceServerFn = createServerFn({ method: "GET" }).handler(
+  async (): Promise<Workspace> => {
+    try {
+      const existing = await workspaceRepository.findBySlug(DEFAULT_WORKSPACE_SLUG);
+      if (existing) return existing;
+      return await workspaceRepository.create({
+        name: DEFAULT_WORKSPACE_NAME,
+        slug: DEFAULT_WORKSPACE_SLUG,
+      });
+    } catch (error) {
+      throw new WorkspaceServiceError("Potential couldn't load the default workspace.", error);
+    }
+  },
+);
+
+async function getOrCreateDefaultWorkspace(): Promise<Workspace> {
+  try {
+    return await getOrCreateDefaultWorkspaceServerFn();
+  } catch (error) {
+    if (error instanceof WorkspaceServiceError) throw error;
+    throw new WorkspaceServiceError("Potential couldn't load the default workspace.", error);
+  }
+}
+
 const createWorkspaceInputSchema = z.object({
   name: z.string().min(1),
   slug: z
@@ -111,6 +143,7 @@ async function listMembers(input: ListMembersInput): Promise<WorkspaceMember[]> 
 
 export const workspaceService = {
   createWorkspace,
+  getOrCreateDefaultWorkspace,
   addMember,
   listMembers,
 };

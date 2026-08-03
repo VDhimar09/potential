@@ -1,14 +1,38 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowUpRight, Play, Sparkles, FileText, Briefcase, Plus, Command } from "lucide-react";
+import {
+  ArrowUpRight,
+  Play,
+  Sparkles,
+  FileText,
+  Briefcase,
+  Users,
+  Plus,
+  Command,
+  MessageSquare,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ALEX_MORGAN } from "@/lib/mock/candidates";
-import { RECENT_INTERVIEWS } from "@/lib/mock/interviews";
-import { OPEN_ROLES } from "@/lib/mock/roles";
+import { roleService } from "@/services/roleService";
+import { candidateService } from "@/services/candidateService";
+import { interviewService } from "@/services/interviewService";
+import { groupInterviewStatus, INTERVIEW_STATUS_GROUP_LABEL } from "@/lib/interviewStatus";
 import { DASHBOARD_REPORT_SUMMARIES } from "@/lib/mock/reports";
-import { ACTIVITY } from "@/lib/mock/activity";
+import { EmptyState } from "@/components/potential/EmptyState";
 
 export const Route = createFileRoute("/app/")({
   component: HomeWorkspace,
+  loader: async ({ context }) => {
+    const [roles, candidates, interviews] = await Promise.all([
+      roleService.listRoles({ workspaceId: context.workspaceId }),
+      candidateService.listCandidates({ workspaceId: context.workspaceId }),
+      interviewService.listInterviews({ workspaceId: context.workspaceId }),
+    ]);
+    return {
+      recentRoles: roles.slice(0, 4),
+      recentCandidates: candidates.slice(0, 5),
+      recentInterviews: interviews.slice(0, 5),
+      inProgressInterview: interviews.find((i) => groupInterviewStatus(i.status) === "in_progress"),
+    };
+  },
   head: () => ({
     meta: [
       { title: "Home — Potential" },
@@ -20,7 +44,15 @@ export const Route = createFileRoute("/app/")({
   }),
 });
 
+const STATUS_GROUP_DOT: Record<string, string> = {
+  draft: "bg-muted-foreground/60",
+  in_progress: "bg-secondary glow-pulse",
+  completed: "bg-emerald",
+};
+
 function HomeWorkspace() {
+  const { recentRoles, recentCandidates, recentInterviews, inProgressInterview } =
+    Route.useLoaderData();
   const now = new Date();
   const hour = now.getHours();
   const greeting =
@@ -53,62 +85,83 @@ function HomeWorkspace() {
         <div className="rise-in">
           <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground/80">
             <span className="h-px w-6 bg-hairline" />
-            Workspace · Wednesday
+            Workspace
           </div>
           <h1 className="mt-5 font-display text-[60px] font-normal leading-[1.02] tracking-[-0.02em] text-foreground md:text-[80px]">
-            {greeting}, Jamie.
+            {greeting}.
           </h1>
           <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-muted-foreground">
-            Three conversations in motion. Potential is gathering evidence, not judgements — you
-            decide when there's enough to understand each person fairly.
+            Potential is gathering evidence, not judgements — you decide when there's enough to
+            understand each person fairly.
           </p>
         </div>
 
         {/* Continue interview — hero glass card */}
-        <Link
-          to="/app/interviews/console"
-          className="group relative mt-14 block overflow-hidden rounded-[22px] border border-hairline/70 bg-card shadow-[0_1px_0_0_rgb(255_255_255/0.08)_inset,0_2px_4px_-2px_rgb(30_30_60/0.04),0_20px_50px_-24px_rgb(60_50_120/0.18)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_1px_0_0_rgb(255_255_255/0.08)_inset,0_4px_10px_-4px_rgb(30_30_60/0.06),0_28px_60px_-24px_rgb(60_50_120/0.28)]"
-        >
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 bg-aurora opacity-45 aurora-drift"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-card/70 via-card/40 to-card/70 backdrop-blur-2xl"
-          />
+        {inProgressInterview ? (
+          <Link
+            to="/app/interviews/$id"
+            params={{ id: inProgressInterview.id }}
+            className="group relative mt-14 block overflow-hidden rounded-[22px] border border-hairline/70 bg-card shadow-[0_1px_0_0_rgb(255_255_255/0.08)_inset,0_2px_4px_-2px_rgb(30_30_60/0.04),0_20px_50px_-24px_rgb(60_50_120/0.18)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_1px_0_0_rgb(255_255_255/0.08)_inset,0_4px_10px_-4px_rgb(30_30_60/0.06),0_28px_60px_-24px_rgb(60_50_120/0.28)]"
+          >
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-aurora opacity-45 aurora-drift"
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-gradient-to-br from-card/70 via-card/40 to-card/70 backdrop-blur-2xl"
+            />
 
-          <div className="relative flex items-start justify-between gap-6 p-10">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-rose">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose opacity-60" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-rose glow-pulse opacity-90" />
-                </span>
-                Live · 34 minutes in · voice
+            <div className="relative flex items-start justify-between gap-6 p-10">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-rose">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose opacity-60" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-rose glow-pulse opacity-90" />
+                  </span>
+                  In progress
+                </div>
+                <div className="mt-4 font-display text-4xl font-normal leading-[1.05] tracking-[-0.02em] text-foreground md:text-5xl">
+                  Continue with{" "}
+                  <span className="text-gradient">
+                    {inProgressInterview.candidate.firstName}{" "}
+                    {inProgressInterview.candidate.lastName}
+                  </span>
+                </div>
+                <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
+                  {inProgressInterview.role.title}
+                </p>
               </div>
-              <div className="mt-4 font-display text-4xl font-normal leading-[1.05] tracking-[-0.02em] text-foreground md:text-5xl">
-                Continue with <span className="text-gradient">{ALEX_MORGAN.name}</span>
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-card text-brand shadow-[0_1px_0_0_rgb(255_255_255/0.15)_inset,0_2px_6px_-1px_rgb(80_70_160/0.14),0_14px_32px_-10px_rgb(80_70_160/0.28)] ring-1 ring-hairline/70 transition-all duration-200 ease-out group-hover:scale-105 group-hover:shadow-[0_1px_0_0_rgb(255_255_255/0.15)_inset,0_4px_10px_-1px_rgb(80_70_160/0.18),0_20px_44px_-12px_rgb(80_70_160/0.36)]">
+                <Play className="h-5 w-5 translate-x-[1px] fill-current" />
               </div>
-              <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
-                Exploring leadership. Potential is listening for evidence of how Alex responds to
-                disagreement before closing the objective.
-              </p>
             </div>
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-card text-brand shadow-[0_1px_0_0_rgb(255_255_255/0.15)_inset,0_2px_6px_-1px_rgb(80_70_160/0.14),0_14px_32px_-10px_rgb(80_70_160/0.28)] ring-1 ring-hairline/70 transition-all duration-200 ease-out group-hover:scale-105 group-hover:shadow-[0_1px_0_0_rgb(255_255_255/0.15)_inset,0_4px_10px_-1px_rgb(80_70_160/0.18),0_20px_44px_-12px_rgb(80_70_160/0.36)]">
-              <Play className="h-5 w-5 translate-x-[1px] fill-current" />
-            </div>
-          </div>
 
-          <div className="relative flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-hairline/60 bg-card/50 px-10 py-5 text-[13px] backdrop-blur-xl">
-            <MiniPill label="Objective" value="Leadership" />
-            <MiniPill label="Evidence captured" value="Ownership · Decision making" tone="ok" />
-            <MiniPill label="Listening for" value="Conflict resolution" tone="pending" />
-            <span className="ml-auto flex items-center gap-1 text-[12px] text-muted-foreground transition-colors group-hover:text-foreground">
-              Enter workspace <ArrowUpRight className="h-3.5 w-3.5" />
-            </span>
+            <div className="relative flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-hairline/60 bg-card/50 px-10 py-5 text-[13px] backdrop-blur-xl">
+              <span className="ml-auto flex items-center gap-1 text-[12px] text-muted-foreground transition-colors group-hover:text-foreground">
+                Enter workspace <ArrowUpRight className="h-3.5 w-3.5" />
+              </span>
+            </div>
+          </Link>
+        ) : (
+          <div className="relative mt-14 overflow-hidden rounded-[22px] border border-dashed border-hairline/70 bg-card/50 p-10 backdrop-blur-2xl">
+            <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground/80">
+              Nothing in progress
+            </div>
+            <div className="mt-4 font-display text-3xl font-normal leading-[1.05] tracking-[-0.02em] text-foreground md:text-4xl">
+              No interview is currently underway.
+            </div>
+            <p className="mt-3 max-w-xl text-[14px] leading-relaxed text-muted-foreground">
+              Create a role and a candidate, then schedule an interview to get started.
+            </p>
+            <Link
+              to="/app/interviews"
+              className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-[13px] font-medium text-background transition-opacity hover:opacity-90"
+            >
+              <MessageSquare className="h-3.5 w-3.5" /> Go to interviews
+            </Link>
           </div>
-        </Link>
+        )}
 
         {/* Ask Potential — AI command bar */}
         <div className="group relative mt-8 ai-glow-hover">
@@ -137,54 +190,68 @@ function HomeWorkspace() {
           {/* Left column */}
           <div className="space-y-14">
             <Section
-              title="In motion"
-              action={<span className="text-[12px] text-muted-foreground">3 conversations</span>}
+              title="Recent interviews"
+              action={
+                <Link
+                  to="/app/interviews"
+                  className="text-[12px] text-muted-foreground hover:text-foreground"
+                >
+                  All →
+                </Link>
+              }
             >
-              <div className="space-y-2">
-                {RECENT_INTERVIEWS.map((i) => (
-                  <Link
-                    key={i.name}
-                    to="/app/interviews/console"
-                    className="group flex items-center gap-4 rounded-2xl border border-hairline/60 bg-background/50 px-5 py-4 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-hairline hover:bg-background/80 hover:shadow-soft"
-                  >
-                    <div
-                      className={cn(
-                        "relative flex h-10 w-10 items-center justify-center rounded-full text-[13px] font-medium",
-                        i.tone === "live" && "bg-secondary/15 text-secondary",
-                        i.tone === "warm" && "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-                        i.tone === "done" && "bg-emerald/15 text-emerald",
-                      )}
-                    >
-                      {i.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                      {i.tone === "live" && (
-                        <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
-                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-secondary opacity-70" />
-                          <span className="relative inline-flex h-2.5 w-2.5 rounded-full border-2 border-background bg-secondary" />
-                        </span>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline gap-2">
-                        <div className="text-[15px] font-medium text-foreground">{i.name}</div>
-                        <div className="text-[12px] text-muted-foreground">· {i.role}</div>
-                      </div>
-                      <div className="text-[12px] text-muted-foreground">{i.detail}</div>
-                    </div>
-                    <div className="hidden text-right sm:block">
-                      <div className="text-[12px] text-foreground">{i.status}</div>
-                      <div className="text-[11px] text-muted-foreground">{i.elapsed}</div>
-                    </div>
-                    <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                  </Link>
-                ))}
-              </div>
+              {recentInterviews.length === 0 ? (
+                <EmptyState
+                  icon={MessageSquare}
+                  title="No interviews yet"
+                  description="Interviews you schedule will show up here, grouped by draft, in progress, and completed."
+                />
+              ) : (
+                <div className="space-y-2">
+                  {recentInterviews.map((interview) => {
+                    const group = groupInterviewStatus(interview.status);
+                    return (
+                      <Link
+                        key={interview.id}
+                        to="/app/interviews/$id"
+                        params={{ id: interview.id }}
+                        className="group flex items-center gap-4 rounded-2xl border border-hairline/60 bg-background/50 px-5 py-4 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-hairline hover:bg-background/80 hover:shadow-soft"
+                      >
+                        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/[0.05] text-[13px] font-medium text-foreground">
+                          {interview.candidate.firstName[0]}
+                          {interview.candidate.lastName[0]}
+                          <span
+                            className={cn(
+                              "absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-background",
+                              STATUS_GROUP_DOT[group],
+                            )}
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-baseline gap-2">
+                            <div className="text-[15px] font-medium text-foreground">
+                              {interview.candidate.firstName} {interview.candidate.lastName}
+                            </div>
+                            <div className="text-[12px] text-muted-foreground">
+                              · {interview.role.title}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="hidden text-right sm:block">
+                          <div className="text-[12px] text-foreground">
+                            {INTERVIEW_STATUS_GROUP_LABEL[group]}
+                          </div>
+                        </div>
+                        <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </Section>
 
             <Section
-              title="Open roles"
+              title="Recent roles"
               action={
                 <Link
                   to="/app/roles/new"
@@ -194,29 +261,36 @@ function HomeWorkspace() {
                 </Link>
               }
             >
-              <div className="grid gap-3 sm:grid-cols-2">
-                {OPEN_ROLES.map((r) => (
-                  <div
-                    key={r.title}
-                    className="group cursor-pointer rounded-2xl border border-hairline/60 bg-background/50 p-6 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-hairline hover:shadow-soft"
-                  >
-                    <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
-                      <Briefcase className="h-3 w-3" /> Role
-                    </div>
-                    <div className="mt-3 font-display text-[22px] leading-tight text-foreground">
-                      {r.title}
-                    </div>
-                    <div className="mt-4 flex items-center gap-3 text-[12px] text-muted-foreground">
-                      <span>{r.competencies} competencies</span>
-                      <span className="text-hairline">·</span>
-                      <span>{r.candidates} candidates</span>
-                    </div>
-                    <div className="mt-3 text-[11px] text-muted-foreground/70">
-                      Updated {r.updated}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {recentRoles.length === 0 ? (
+                <EmptyState
+                  icon={Briefcase}
+                  title="No roles yet"
+                  description="Create a role to start designing an interview plan grounded in evidence."
+                />
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {recentRoles.map((role) => (
+                    <Link
+                      key={role.id}
+                      to="/app/roles/$id"
+                      params={{ id: role.id }}
+                      className="group cursor-pointer rounded-2xl border border-hairline/60 bg-background/50 p-6 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-hairline hover:shadow-soft"
+                    >
+                      <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
+                        <Briefcase className="h-3 w-3" /> Role
+                      </div>
+                      <div className="mt-3 font-display text-[22px] leading-tight text-foreground">
+                        {role.title}
+                      </div>
+                      {role.department && (
+                        <div className="mt-3 text-[12px] text-muted-foreground">
+                          {role.department}
+                        </div>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              )}
             </Section>
           </div>
 
@@ -226,8 +300,7 @@ function HomeWorkspace() {
               title="Evidence reports"
               action={
                 <Link
-                  to="/app/reports/$id"
-                  params={{ id: ALEX_MORGAN.id }}
+                  to="/app/reports"
                   className="text-[12px] text-muted-foreground hover:text-foreground"
                 >
                   All →
@@ -235,10 +308,10 @@ function HomeWorkspace() {
               }
             >
               <div className="space-y-3">
-                {DASHBOARD_REPORT_SUMMARIES.map((r) => (
+                {DASHBOARD_REPORT_SUMMARIES.map((r, i) => (
                   <Link
-                    key={r.name}
-                    to="/app/reports/$id"
+                    key={`${r.id}-${i}`}
+                    to="/app/reports/$id/evidence"
                     params={{ id: r.id }}
                     className="group block rounded-2xl border border-hairline/60 bg-background/50 p-5 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-hairline hover:shadow-soft"
                   >
@@ -256,27 +329,43 @@ function HomeWorkspace() {
               </div>
             </Section>
 
-            <Section title="Activity">
-              <ol className="relative space-y-4 border-l border-hairline/70 pl-5">
-                {ACTIVITY.map((a, i) => (
-                  <li key={i} className="relative">
-                    <span
-                      className={cn(
-                        "absolute -left-[23px] top-1.5 h-2 w-2 rounded-full border-2 border-background",
-                        a.tone === "evidence" && "bg-emerald",
-                        a.tone === "reasoning" && "bg-secondary glow-pulse",
-                        a.tone === "pause" && "bg-amber-500",
-                        a.tone === "done" && "bg-muted-foreground/60",
-                      )}
-                    />
-                    <div className="text-[13px] leading-snug text-foreground">
-                      <span className="font-medium">{a.who}</span>{" "}
-                      <span className="text-muted-foreground">{a.what}</span>
-                    </div>
-                    <div className="mt-0.5 text-[11px] text-muted-foreground/70">{a.when}</div>
-                  </li>
-                ))}
-              </ol>
+            <Section
+              title="Recent candidates"
+              action={
+                <Link
+                  to="/app/candidates"
+                  className="text-[12px] text-muted-foreground hover:text-foreground"
+                >
+                  All →
+                </Link>
+              }
+            >
+              {recentCandidates.length === 0 ? (
+                <EmptyState
+                  icon={Users}
+                  title="No candidates yet"
+                  description="Add a candidate to start scheduling interviews with them."
+                />
+              ) : (
+                <div className="space-y-2">
+                  {recentCandidates.map((candidate) => (
+                    <Link
+                      key={candidate.id}
+                      to="/app/candidates/$id"
+                      params={{ id: candidate.id }}
+                      className="group flex items-center gap-3 rounded-2xl border border-hairline/60 bg-background/50 px-5 py-4 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:border-hairline hover:shadow-soft"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[14px] font-medium text-foreground">
+                          {candidate.firstName} {candidate.lastName}
+                        </div>
+                        <div className="text-[12px] text-muted-foreground">{candidate.email}</div>
+                      </div>
+                      <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                    </Link>
+                  ))}
+                </div>
+              )}
             </Section>
 
             <div className="rounded-2xl border border-hairline/60 bg-background/50 p-6 backdrop-blur-xl">
@@ -316,33 +405,5 @@ function Section({
       </div>
       {children}
     </section>
-  );
-}
-
-function MiniPill({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: "ok" | "pending";
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">
-        {label}
-      </span>
-      <span
-        className={cn(
-          "text-[13px] font-medium",
-          tone === "ok" && "text-emerald",
-          tone === "pending" && "text-amber-600 dark:text-amber-400",
-          !tone && "text-foreground",
-        )}
-      >
-        {value}
-      </span>
-    </div>
   );
 }

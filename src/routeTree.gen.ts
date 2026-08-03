@@ -14,9 +14,16 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as DiscoveryRouteImport } from './routes/discovery'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as PlaygroundEvidenceRouteImport } from './routes/playground.evidence'
+import { Route as AppCandidatesIndexRouteImport } from './routes/app.candidates.index'
+import { Route as AppCandidatesIdRouteImport } from './routes/app.candidates.$id'
+import { Route as AppInterviewsIndexRouteImport } from './routes/app.interviews.index'
+import { Route as AppInterviewsIdRouteImport } from './routes/app.interviews.$id'
 import { Route as AppInterviewsConsoleRouteImport } from './routes/app.interviews.console'
 import { Route as AppJourneyIdRouteImport } from './routes/app.journey.$id'
+import { Route as AppReportsIndexRouteImport } from './routes/app.reports.index'
 import { Route as AppReportsIdRouteImport } from './routes/app.reports.$id'
+import { Route as AppRolesIndexRouteImport } from './routes/app.roles.index'
+import { Route as AppRolesIdRouteImport } from './routes/app.roles.$id'
 import { Route as AppRolesNewRouteImport } from './routes/app.roles.new'
 import { Route as AppReportsIdEvidenceRouteImport } from './routes/app.reports.$id.evidence'
 
@@ -45,6 +52,26 @@ const PlaygroundEvidenceRoute = PlaygroundEvidenceRouteImport.update({
   path: '/playground/evidence',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppCandidatesIndexRoute = AppCandidatesIndexRouteImport.update({
+  id: '/candidates/',
+  path: '/candidates/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCandidatesIdRoute = AppCandidatesIdRouteImport.update({
+  id: '/candidates/$id',
+  path: '/candidates/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInterviewsIndexRoute = AppInterviewsIndexRouteImport.update({
+  id: '/interviews/',
+  path: '/interviews/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInterviewsIdRoute = AppInterviewsIdRouteImport.update({
+  id: '/interviews/$id',
+  path: '/interviews/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppInterviewsConsoleRoute = AppInterviewsConsoleRouteImport.update({
   id: '/interviews/console',
   path: '/interviews/console',
@@ -55,9 +82,24 @@ const AppJourneyIdRoute = AppJourneyIdRouteImport.update({
   path: '/journey/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReportsIndexRoute = AppReportsIndexRouteImport.update({
+  id: '/reports/',
+  path: '/reports/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppReportsIdRoute = AppReportsIdRouteImport.update({
   id: '/reports/$id',
   path: '/reports/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRolesIndexRoute = AppRolesIndexRouteImport.update({
+  id: '/roles/',
+  path: '/roles/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRolesIdRoute = AppRolesIdRouteImport.update({
+  id: '/roles/$id',
+  path: '/roles/$id',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRolesNewRoute = AppRolesNewRouteImport.update({
@@ -77,10 +119,17 @@ export interface FileRoutesByFullPath {
   '/discovery': typeof DiscoveryRoute
   '/playground/evidence': typeof PlaygroundEvidenceRoute
   '/app/': typeof AppIndexRoute
+  '/app/candidates/$id': typeof AppCandidatesIdRoute
+  '/app/interviews/$id': typeof AppInterviewsIdRoute
   '/app/interviews/console': typeof AppInterviewsConsoleRoute
   '/app/journey/$id': typeof AppJourneyIdRoute
   '/app/reports/$id': typeof AppReportsIdRouteWithChildren
+  '/app/roles/$id': typeof AppRolesIdRoute
   '/app/roles/new': typeof AppRolesNewRoute
+  '/app/candidates/': typeof AppCandidatesIndexRoute
+  '/app/interviews/': typeof AppInterviewsIndexRoute
+  '/app/reports/': typeof AppReportsIndexRoute
+  '/app/roles/': typeof AppRolesIndexRoute
   '/app/reports/$id/evidence': typeof AppReportsIdEvidenceRoute
 }
 export interface FileRoutesByTo {
@@ -88,10 +137,17 @@ export interface FileRoutesByTo {
   '/discovery': typeof DiscoveryRoute
   '/playground/evidence': typeof PlaygroundEvidenceRoute
   '/app': typeof AppIndexRoute
+  '/app/candidates/$id': typeof AppCandidatesIdRoute
+  '/app/interviews/$id': typeof AppInterviewsIdRoute
   '/app/interviews/console': typeof AppInterviewsConsoleRoute
   '/app/journey/$id': typeof AppJourneyIdRoute
   '/app/reports/$id': typeof AppReportsIdRouteWithChildren
+  '/app/roles/$id': typeof AppRolesIdRoute
   '/app/roles/new': typeof AppRolesNewRoute
+  '/app/candidates': typeof AppCandidatesIndexRoute
+  '/app/interviews': typeof AppInterviewsIndexRoute
+  '/app/reports': typeof AppReportsIndexRoute
+  '/app/roles': typeof AppRolesIndexRoute
   '/app/reports/$id/evidence': typeof AppReportsIdEvidenceRoute
 }
 export interface FileRoutesById {
@@ -101,10 +157,17 @@ export interface FileRoutesById {
   '/discovery': typeof DiscoveryRoute
   '/playground/evidence': typeof PlaygroundEvidenceRoute
   '/app/': typeof AppIndexRoute
+  '/app/candidates/$id': typeof AppCandidatesIdRoute
+  '/app/interviews/$id': typeof AppInterviewsIdRoute
   '/app/interviews/console': typeof AppInterviewsConsoleRoute
   '/app/journey/$id': typeof AppJourneyIdRoute
   '/app/reports/$id': typeof AppReportsIdRouteWithChildren
+  '/app/roles/$id': typeof AppRolesIdRoute
   '/app/roles/new': typeof AppRolesNewRoute
+  '/app/candidates/': typeof AppCandidatesIndexRoute
+  '/app/interviews/': typeof AppInterviewsIndexRoute
+  '/app/reports/': typeof AppReportsIndexRoute
+  '/app/roles/': typeof AppRolesIndexRoute
   '/app/reports/$id/evidence': typeof AppReportsIdEvidenceRoute
 }
 export interface FileRouteTypes {
@@ -115,10 +178,17 @@ export interface FileRouteTypes {
     | '/discovery'
     | '/playground/evidence'
     | '/app/'
+    | '/app/candidates/$id'
+    | '/app/interviews/$id'
     | '/app/interviews/console'
     | '/app/journey/$id'
     | '/app/reports/$id'
+    | '/app/roles/$id'
     | '/app/roles/new'
+    | '/app/candidates/'
+    | '/app/interviews/'
+    | '/app/reports/'
+    | '/app/roles/'
     | '/app/reports/$id/evidence'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -126,10 +196,17 @@ export interface FileRouteTypes {
     | '/discovery'
     | '/playground/evidence'
     | '/app'
+    | '/app/candidates/$id'
+    | '/app/interviews/$id'
     | '/app/interviews/console'
     | '/app/journey/$id'
     | '/app/reports/$id'
+    | '/app/roles/$id'
     | '/app/roles/new'
+    | '/app/candidates'
+    | '/app/interviews'
+    | '/app/reports'
+    | '/app/roles'
     | '/app/reports/$id/evidence'
   id:
     | '__root__'
@@ -138,10 +215,17 @@ export interface FileRouteTypes {
     | '/discovery'
     | '/playground/evidence'
     | '/app/'
+    | '/app/candidates/$id'
+    | '/app/interviews/$id'
     | '/app/interviews/console'
     | '/app/journey/$id'
     | '/app/reports/$id'
+    | '/app/roles/$id'
     | '/app/roles/new'
+    | '/app/candidates/'
+    | '/app/interviews/'
+    | '/app/reports/'
+    | '/app/roles/'
     | '/app/reports/$id/evidence'
   fileRoutesById: FileRoutesById
 }
@@ -189,6 +273,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlaygroundEvidenceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/candidates/': {
+      id: '/app/candidates/'
+      path: '/candidates'
+      fullPath: '/app/candidates/'
+      preLoaderRoute: typeof AppCandidatesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/candidates/$id': {
+      id: '/app/candidates/$id'
+      path: '/candidates/$id'
+      fullPath: '/app/candidates/$id'
+      preLoaderRoute: typeof AppCandidatesIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/interviews/': {
+      id: '/app/interviews/'
+      path: '/interviews'
+      fullPath: '/app/interviews/'
+      preLoaderRoute: typeof AppInterviewsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/interviews/$id': {
+      id: '/app/interviews/$id'
+      path: '/interviews/$id'
+      fullPath: '/app/interviews/$id'
+      preLoaderRoute: typeof AppInterviewsIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/interviews/console': {
       id: '/app/interviews/console'
       path: '/interviews/console'
@@ -203,11 +315,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppJourneyIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/reports/': {
+      id: '/app/reports/'
+      path: '/reports'
+      fullPath: '/app/reports/'
+      preLoaderRoute: typeof AppReportsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/reports/$id': {
       id: '/app/reports/$id'
       path: '/reports/$id'
       fullPath: '/app/reports/$id'
       preLoaderRoute: typeof AppReportsIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/roles/': {
+      id: '/app/roles/'
+      path: '/roles'
+      fullPath: '/app/roles/'
+      preLoaderRoute: typeof AppRolesIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/roles/$id': {
+      id: '/app/roles/$id'
+      path: '/roles/$id'
+      fullPath: '/app/roles/$id'
+      preLoaderRoute: typeof AppRolesIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/roles/new': {
@@ -241,18 +374,32 @@ const AppReportsIdRouteWithChildren = AppReportsIdRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
+  AppCandidatesIdRoute: typeof AppCandidatesIdRoute
+  AppInterviewsIdRoute: typeof AppInterviewsIdRoute
   AppInterviewsConsoleRoute: typeof AppInterviewsConsoleRoute
   AppJourneyIdRoute: typeof AppJourneyIdRoute
   AppReportsIdRoute: typeof AppReportsIdRouteWithChildren
+  AppRolesIdRoute: typeof AppRolesIdRoute
   AppRolesNewRoute: typeof AppRolesNewRoute
+  AppCandidatesIndexRoute: typeof AppCandidatesIndexRoute
+  AppInterviewsIndexRoute: typeof AppInterviewsIndexRoute
+  AppReportsIndexRoute: typeof AppReportsIndexRoute
+  AppRolesIndexRoute: typeof AppRolesIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
+  AppCandidatesIdRoute: AppCandidatesIdRoute,
+  AppInterviewsIdRoute: AppInterviewsIdRoute,
   AppInterviewsConsoleRoute: AppInterviewsConsoleRoute,
   AppJourneyIdRoute: AppJourneyIdRoute,
   AppReportsIdRoute: AppReportsIdRouteWithChildren,
+  AppRolesIdRoute: AppRolesIdRoute,
   AppRolesNewRoute: AppRolesNewRoute,
+  AppCandidatesIndexRoute: AppCandidatesIndexRoute,
+  AppInterviewsIndexRoute: AppInterviewsIndexRoute,
+  AppReportsIndexRoute: AppReportsIndexRoute,
+  AppRolesIndexRoute: AppRolesIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

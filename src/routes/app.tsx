@@ -1,8 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/potential/AppShell";
+import { workspaceService } from "@/services/workspaceService";
+import { candidateService } from "@/services/candidateService";
 
 export const Route = createFileRoute("/app")({
-  component: AppShell,
+  component: AppLayout,
+  beforeLoad: async () => {
+    const workspace = await workspaceService.getOrCreateDefaultWorkspace();
+    return { workspaceId: workspace.id };
+  },
+  loader: async ({ context }) => {
+    const candidates = await candidateService.listCandidates({
+      workspaceId: context.workspaceId,
+    });
+    return { recentCandidates: candidates.slice(0, 5) };
+  },
   head: () => ({
     meta: [
       { title: "Potential — Workspace" },
@@ -14,3 +26,8 @@ export const Route = createFileRoute("/app")({
     ],
   }),
 });
+
+function AppLayout() {
+  const { recentCandidates } = Route.useLoaderData();
+  return <AppShell recentCandidates={recentCandidates} />;
+}

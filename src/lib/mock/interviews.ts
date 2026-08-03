@@ -1,9 +1,4 @@
-import type {
-  TranscriptLine,
-  InterviewTimelineEntry,
-  Objective,
-  RecentInterviewSummary,
-} from "@/domain";
+import type { TranscriptLine, InterviewTimelineEntry, Objective } from "@/domain";
 
 export const TRANSCRIPT: TranscriptLine[] = [
   {
@@ -46,31 +41,4 @@ export const CANDIDATE_OBJECTIVES: Objective[] = [
   { label: "Ownership", state: "done" },
   { label: "Leadership", state: "active" },
   { label: "Conflict management", state: "next" },
-];
-
-export const RECENT_INTERVIEWS: RecentInterviewSummary[] = [
-  {
-    name: "Alex Morgan",
-    role: "Staff Engineer",
-    status: "In progress",
-    elapsed: "34 min",
-    tone: "live",
-    detail: "Currently exploring leadership",
-  },
-  {
-    name: "Priya Shah",
-    role: "Senior PM",
-    status: "Ready to resume",
-    elapsed: "Paused 2h ago",
-    tone: "warm",
-    detail: "3 competencies observed",
-  },
-  {
-    name: "Jordan Reyes",
-    role: "Product Designer",
-    status: "Complete",
-    elapsed: "Yesterday · 52 min",
-    tone: "done",
-    detail: "Evidence report ready",
-  },
 ];

@@ -92,6 +92,29 @@ async function listCandidates(input: ListCandidatesInput): Promise<Candidate[]> 
   }
 }
 
+const getCandidateInputSchema = z.object({ candidateId: z.string().min(1) });
+
+export type GetCandidateInput = z.infer<typeof getCandidateInputSchema>;
+
+const getCandidateServerFn = createServerFn({ method: "POST" })
+  .validator(getCandidateInputSchema)
+  .handler(async ({ data }): Promise<Candidate | null> => {
+    try {
+      return await candidateRepository.findById(data.candidateId);
+    } catch (error) {
+      throw new CandidateServiceError("Potential couldn't load that candidate.", error);
+    }
+  });
+
+async function getCandidate(input: GetCandidateInput): Promise<Candidate | null> {
+  try {
+    return await getCandidateServerFn({ data: input });
+  } catch (error) {
+    if (error instanceof CandidateServiceError) throw error;
+    throw new CandidateServiceError("Potential couldn't load that candidate.", error);
+  }
+}
+
 const updateCandidateStatusInputSchema = z.object({
   candidateId: z.string().min(1),
   status: candidateStatusSchema,
@@ -121,5 +144,6 @@ async function updateCandidateStatus(input: UpdateCandidateStatusInput): Promise
 export const candidateService = {
   createCandidate,
   listCandidates,
+  getCandidate,
   updateCandidateStatus,
 };

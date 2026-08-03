@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { interviewRepository } from "@/db/repositories/interviewRepository";
+import {
+  interviewRepository,
+  type InterviewWithRelations,
+} from "@/db/repositories/interviewRepository";
 import type { Interview } from "@/generated/prisma/client";
 
 /**
@@ -67,7 +70,7 @@ export type ListInterviewsInput = z.infer<typeof listInterviewsInputSchema>;
 
 const listInterviewsServerFn = createServerFn({ method: "POST" })
   .validator(listInterviewsInputSchema)
-  .handler(async ({ data }): Promise<Interview[]> => {
+  .handler(async ({ data }): Promise<InterviewWithRelations[]> => {
     try {
       return await interviewRepository.findByWorkspace(data.workspaceId);
     } catch (error) {
@@ -78,12 +81,88 @@ const listInterviewsServerFn = createServerFn({ method: "POST" })
     }
   });
 
-async function listInterviews(input: ListInterviewsInput): Promise<Interview[]> {
+async function listInterviews(input: ListInterviewsInput): Promise<InterviewWithRelations[]> {
   try {
     return await listInterviewsServerFn({ data: input });
   } catch (error) {
     if (error instanceof InterviewServiceError) throw error;
     throw new InterviewServiceError("Potential couldn't load that workspace's interviews.", error);
+  }
+}
+
+const listInterviewsByRoleInputSchema = z.object({ roleId: z.string().min(1) });
+
+export type ListInterviewsByRoleInput = z.infer<typeof listInterviewsByRoleInputSchema>;
+
+const listInterviewsByRoleServerFn = createServerFn({ method: "POST" })
+  .validator(listInterviewsByRoleInputSchema)
+  .handler(async ({ data }): Promise<InterviewWithRelations[]> => {
+    try {
+      return await interviewRepository.findByRole(data.roleId);
+    } catch (error) {
+      throw new InterviewServiceError("Potential couldn't load that role's interviews.", error);
+    }
+  });
+
+async function listInterviewsByRole(
+  input: ListInterviewsByRoleInput,
+): Promise<InterviewWithRelations[]> {
+  try {
+    return await listInterviewsByRoleServerFn({ data: input });
+  } catch (error) {
+    if (error instanceof InterviewServiceError) throw error;
+    throw new InterviewServiceError("Potential couldn't load that role's interviews.", error);
+  }
+}
+
+const listInterviewsByCandidateInputSchema = z.object({ candidateId: z.string().min(1) });
+
+export type ListInterviewsByCandidateInput = z.infer<typeof listInterviewsByCandidateInputSchema>;
+
+const listInterviewsByCandidateServerFn = createServerFn({ method: "POST" })
+  .validator(listInterviewsByCandidateInputSchema)
+  .handler(async ({ data }): Promise<InterviewWithRelations[]> => {
+    try {
+      return await interviewRepository.findByCandidate(data.candidateId);
+    } catch (error) {
+      throw new InterviewServiceError(
+        "Potential couldn't load that candidate's interviews.",
+        error,
+      );
+    }
+  });
+
+async function listInterviewsByCandidate(
+  input: ListInterviewsByCandidateInput,
+): Promise<InterviewWithRelations[]> {
+  try {
+    return await listInterviewsByCandidateServerFn({ data: input });
+  } catch (error) {
+    if (error instanceof InterviewServiceError) throw error;
+    throw new InterviewServiceError("Potential couldn't load that candidate's interviews.", error);
+  }
+}
+
+const getInterviewInputSchema = z.object({ interviewId: z.string().min(1) });
+
+export type GetInterviewInput = z.infer<typeof getInterviewInputSchema>;
+
+const getInterviewServerFn = createServerFn({ method: "POST" })
+  .validator(getInterviewInputSchema)
+  .handler(async ({ data }): Promise<InterviewWithRelations | null> => {
+    try {
+      return await interviewRepository.findById(data.interviewId);
+    } catch (error) {
+      throw new InterviewServiceError("Potential couldn't load that interview.", error);
+    }
+  });
+
+async function getInterview(input: GetInterviewInput): Promise<InterviewWithRelations | null> {
+  try {
+    return await getInterviewServerFn({ data: input });
+  } catch (error) {
+    if (error instanceof InterviewServiceError) throw error;
+    throw new InterviewServiceError("Potential couldn't load that interview.", error);
   }
 }
 
@@ -116,5 +195,8 @@ async function updateInterviewStatus(input: UpdateInterviewStatusInput): Promise
 export const interviewService = {
   createInterview,
   listInterviews,
+  listInterviewsByRole,
+  listInterviewsByCandidate,
+  getInterview,
   updateInterviewStatus,
 };

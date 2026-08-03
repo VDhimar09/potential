@@ -78,6 +78,29 @@ async function listRoles(input: ListRolesInput): Promise<Role[]> {
   }
 }
 
+const getRoleInputSchema = z.object({ roleId: z.string().min(1) });
+
+export type GetRoleInput = z.infer<typeof getRoleInputSchema>;
+
+const getRoleServerFn = createServerFn({ method: "POST" })
+  .validator(getRoleInputSchema)
+  .handler(async ({ data }): Promise<Role | null> => {
+    try {
+      return await roleRepository.findById(data.roleId);
+    } catch (error) {
+      throw new RoleServiceError("Potential couldn't load that role.", error);
+    }
+  });
+
+async function getRole(input: GetRoleInput): Promise<Role | null> {
+  try {
+    return await getRoleServerFn({ data: input });
+  } catch (error) {
+    if (error instanceof RoleServiceError) throw error;
+    throw new RoleServiceError("Potential couldn't load that role.", error);
+  }
+}
+
 const updateRoleStatusInputSchema = z.object({
   roleId: z.string().min(1),
   status: roleStatusSchema,
@@ -107,5 +130,6 @@ async function updateRoleStatus(input: UpdateRoleStatusInput): Promise<Role> {
 export const roleService = {
   createRole,
   listRoles,
+  getRole,
   updateRoleStatus,
 };

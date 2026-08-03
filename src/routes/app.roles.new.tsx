@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, Sparkles, Upload, Check, Plus, X, ArrowRight } from "lucide-react";
@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { InterviewBlueprint } from "@/domain";
 import { rolePlannerService } from "@/services/rolePlannerService";
+import { roleService } from "@/services/roleService";
 import {
   SUGGESTED_COMPETENCIES,
   DEFAULT_COMPETENCIES,
@@ -23,6 +24,9 @@ export const Route = createFileRoute("/app/roles/new")({
 });
 
 function CreateRole() {
+  const { workspaceId } = Route.useRouteContext();
+  const navigate = useNavigate();
+  const router = useRouter();
   const [title, setTitle] = useState("Staff Engineer, Platform");
   const [jd, setJd] = useState("");
   const [comps, setComps] = useState<string[]>(DEFAULT_COMPETENCIES);
@@ -32,6 +36,7 @@ function CreateRole() {
   const [responsibilitiesText, setResponsibilitiesText] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     if (!analyzeError) return;
@@ -58,6 +63,21 @@ function CreateRole() {
       );
     } finally {
       setIsAnalyzing(false);
+    }
+  }
+
+  async function handleCreateRole() {
+    const roleTitle = title.trim();
+    if (!roleTitle || isCreating) return;
+
+    setIsCreating(true);
+    try {
+      const role = await roleService.createRole({ workspaceId, title: roleTitle });
+      await router.invalidate();
+      navigate({ to: "/app/roles/$id", params: { id: role.id } });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Potential couldn't create that role.");
+      setIsCreating(false);
     }
   }
 
@@ -287,12 +307,14 @@ function CreateRole() {
         {/* Sticky action */}
         <div className="mt-12 flex items-center justify-between border-t border-hairline/70 pt-6">
           <div className="text-[12px] text-muted-foreground">
-            Draft saved · {objectives.length || 0} objectives selected
+            {objectives.length || 0} objectives selected
           </div>
-          <Button asChild className="rounded-full bg-foreground text-background hover:opacity-90">
-            <Link to="/app/interviews/console">
-              Open interview workspace <ArrowRight className="ml-1 h-4 w-4" />
-            </Link>
+          <Button
+            onClick={handleCreateRole}
+            disabled={!title.trim() || isCreating}
+            className="rounded-full bg-foreground text-background hover:opacity-90"
+          >
+            {isCreating ? "Creating…" : "Create role"} <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
         </div>
       </div>

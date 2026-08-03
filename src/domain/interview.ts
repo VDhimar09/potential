@@ -18,14 +18,3 @@ export interface InterviewTimelineEntry {
   kind: InterviewTimelineKind;
   label: string;
 }
-
-export type InterviewStatusTone = "live" | "warm" | "done";
-
-export interface RecentInterviewSummary {
-  name: string;
-  role: string;
-  status: string;
-  elapsed: string;
-  tone: InterviewStatusTone;
-  detail: string;
-}
