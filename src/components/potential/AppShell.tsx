@@ -48,7 +48,7 @@ export function AppShell({ recentCandidates }: { recentCandidates: Candidate[] }
                     "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200 ease-out",
                     active
                       ? "bg-brand/[0.09] text-brand shadow-[0_1px_0_0_rgb(255_255_255/0.6)_inset]"
-                      : "text-muted-foreground hover:bg-foreground/[0.035] hover:text-foreground",
+                      : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground",
                   )}
                 >
                   <item.icon

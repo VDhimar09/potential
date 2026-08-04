@@ -32,7 +32,7 @@ function CandidateJourney() {
             <ArrowLeft className="h-3.5 w-3.5" /> Workspace
           </Link>
           <Link
-            to="/app/reports/$id"
+            to="/app/reports/$id/evidence"
             params={{ id: ALEX_MORGAN.id }}
             className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
           >
